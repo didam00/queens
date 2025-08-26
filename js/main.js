@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const sizes = [2, 2, 3, 3, 4, 5, 6];
       return sizes[regionId];
     } else { // hard
-      const sizes = [2, 3, 4, 5, 6, 7, 8];
+      const sizes = [2, 3, 4, 5, 6, 7, 7];
       return sizes[regionId];
     }
   }
