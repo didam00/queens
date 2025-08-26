@@ -1,516 +1,88 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queens Puzzle</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .error-highlight {
-            background-color: rgba(255, 107, 107, 0.6) !important;
-        }
-        .error-icon {
-            color: #dc2626 !important;
-            transition: color 0.3s;
-        }
-        @keyframes pulse-hint {
-            0% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0); }
-        }
-        .hint-animation {
-            animation: pulse-hint 1.5s ease-out;
-        }
-        .material-symbols-outlined {
-            pointer-events: none; 
-        }
-        select {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Queens Puzzle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="bg-[#fafafa] flex flex-col items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-lg mx-auto">
+  <div class="w-full max-w-lg mx-auto">
 
-        <header class="flex justify-between items-center mb-4">
-            <div class="flex items-center space-x-2 sm:space-x-4">
-                <div class="text-lg font-bold flex items-center">
-                    <span class="material-symbols-outlined text-xl align-bottom mr-1">timer</span>
-                    <span id="timer">00:00</span>
-                </div>
-                <div class="relative flex items-center">
-                    <select id="difficulty" class="bg-gray-200 text-gray-800 font-semibold py-2 pl-4 pr-10 rounded-lg">
-                        <option value="easy">쉬움</option>
-                        <option value="medium">보통</option>
-                        <option value="hard">어려움</option>
-                    </select>
-                    <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-600">arrow_drop_down</span>
-                </div>
-                 <button id="records-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-400 transition flex items-center"><span class="material-symbols-outlined">history</span></button>
-            </div>
-            <div class="flex items-center space-x-2">
-                <button id="reset-btn" class="bg-gray-200 text-white font-bold p-2 rounded-lg hover:bg-orange-500 transition flex items-center"><span class="material-symbols-outlined">restart_alt</span></button>
-                <button id="new-game-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">새 보드</button>
-            </div>
-        </header>
-
-        <main id="game-board" class="w-full grid grid-cols-8 bg-white cursor-pointer select-none">
-            <!-- 자바스크립트로 셀 생성 -->
-        </main>
-
-        <footer class="flex justify-between mt-4 gap-4">
-            <button id="undo-btn" class="bg-gray-300 text-gray-800 font-bold p-3 rounded-lg hover:bg-gray-400 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center grow justify-center"><span class="material-symbols-outlined">undo</span></button>
-            <button id="hint-btn" class="bg-yellow-400 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-yellow-500 transition flex items-center"><span class="material-symbols-outlined mr-1 grow justify-center">lightbulb</span> 힌트</button>
-            <button id="rules-btn" class="bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-400 transition flex items-center"><span class="material-symbols-outlined mr-1 grow justify-center">help_outline</span> 규칙 보기</button>
-        </footer>
-    </div>
-
-    <!-- 모달들 -->
-    <div id="rules-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-10">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 class="text-2xl font-bold mb-4">게임 규칙</h2>
-            <ol class="list-decimal list-inside space-y-3 text-gray-700">
-                <li>각 <strong>행</strong>과 <strong>열</strong>에는 퀸을 하나만 놓을 수 있습니다.</li>
-                <li>같은 <strong>색상 영역</strong> 안에는 퀸을 하나만 놓을 수 있습니다.</li>
-                <li>퀸은 서로 <strong>바로 옆 대각선(1칸 거리)</strong>에 위치할 수 없습니다.</li>
-            </ol>
-            <button id="close-rules-btn" class="mt-6 w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">이해했습니다</button>
+    <header class="flex justify-between items-center mb-4">
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <div class="text-lg font-bold flex items-center">
+          <span class="material-symbols-outlined text-xl align-bottom mr-1">timer</span>
+          <span id="timer">00:00</span>
         </div>
-    </div>
-    
-    <div id="win-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-20">
-        <canvas id="fireworks-canvas" class="absolute inset-0 w-full h-full"></canvas>
-        <div class="bg-white rounded-lg p-8 max-w-md w-full text-center z-10">
-            <h2 class="text-4xl font-bold mb-2 text-yellow-500">성공!</h2>
-            <p class="text-lg text-gray-700 mb-4"><strong id="clear-time" class="text-black"></strong>만에 해결했어요!</p>
-            <div class="flex space-x-4">
-                <button id="view-board-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition">보드 보기</button>
-                <button id="play-again-btn" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">새 게임</button>
-            </div>
+        <div class="relative flex items-center">
+          <select id="difficulty" class="bg-gray-200 text-gray-800 font-semibold py-2 pl-4 pr-10 rounded-lg hover:bg-gray-300 cursor-pointer" title="난이도 선택">
+            <option value="easy">쉬움</option>
+            <option value="medium">보통</option>
+            <option value="hard">어려움</option>
+          </select>
+          <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-600">arrow_drop_down</span>
         </div>
+          <button id="records-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">history</span></button>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="reset-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">restart_alt</span></button>
+        <button id="new-game-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">새 보드</button>
+      </div>
+    </header>
+
+    <main id="game-board" class="w-full grid grid-cols-8 bg-white cursor-pointer select-none rounded-lg">
+      <!-- 자바스크립트로 셀 생성 -->
+    </main>
+
+    <footer class="flex justify-between mt-4 gap-2">
+      <button id="undo-btn" class="bg-gray-200 text-gray-800 font-bold p-3 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center grow justify-center"><span class="material-symbols-outlined">undo</span></button>
+      <button id="hint-btn" class="bg-yellow-400 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-yellow-500 flex items-center"><span class="material-symbols-outlined mr-1 grow justify-center">lightbulb</span> 힌트</button>
+      <button id="rules-btn" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined mr-1 grow justify-center">help_outline</span> 규칙 보기</button>
+    </footer>
+  </div>
+
+  <!-- 모달들 -->
+  <div id="rules-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-10">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full">
+      <h2 class="text-2xl font-bold mb-4">게임 규칙</h2>
+      <ol class="list-decimal list-inside space-y-3 text-gray-700">
+        <li>각 <strong>행</strong>과 <strong>열</strong>에는 퀸을 하나만 놓을 수 있습니다.</li>
+        <li>같은 <strong>색상 영역</strong> 안에는 퀸을 하나만 놓을 수 있습니다.</li>
+        <li>퀸은 서로 <strong>바로 옆 대각선(1칸 거리)</strong>에 위치할 수 없습니다.</li>
+      </ol>
+      <button id="close-rules-btn" class="mt-6 w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600">이해했습니다</button>
     </div>
-
-    <div id="records-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-30">
-        <div class="bg-white rounded-lg p-6 max-w-lg w-full h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold">성공 기록</h2>
-                <button id="close-records-btn" class="p-2 rounded-full hover:bg-gray-200"><span class="material-symbols-outlined">close</span></button>
-            </div>
-            <div id="records-list" class="flex-grow overflow-y-auto space-y-4 pr-2"></div>
-        </div>
+  </div>
+  
+  <div id="win-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-20">
+    <canvas id="fireworks-canvas" class="absolute inset-0 w-full h-full"></canvas>
+    <div class="bg-white rounded-lg p-8 max-w-md w-full text-center z-10">
+      <h2 class="text-4xl font-bold mb-2 text-yellow-500">성공!</h2>
+      <p class="text-lg text-gray-700 mb-4"><strong id="clear-time" class="text-black"></strong>만에 해결했어요!</p>
+      <div class="flex space-x-4">
+        <button id="view-board-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition">보드 보기</button>
+        <button id="play-again-btn" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">새 게임</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // DOM 요소들
-            const boardElement = document.getElementById('game-board');
-            const timerElement = document.getElementById('timer');
-            const difficultySelect = document.getElementById('difficulty');
-            const newGameBtn = document.getElementById('new-game-btn');
-            const resetBtn = document.getElementById('reset-btn');
-            const undoBtn = document.getElementById('undo-btn');
-            const hintBtn = document.getElementById('hint-btn');
-            const rulesBtn = document.getElementById('rules-btn');
-            const recordsBtn = document.getElementById('records-btn');
-            
-            // 모달 관련 요소들
-            const rulesModal = document.getElementById('rules-modal');
-            const closeRulesBtn = document.getElementById('close-rules-btn');
-            const winModal = document.getElementById('win-modal');
-            const clearTimeElement = document.getElementById('clear-time');
-            const viewBoardBtn = document.getElementById('view-board-btn');
-            const playAgainBtn = document.getElementById('play-again-btn');
-            const recordsModal = document.getElementById('records-modal');
-            const closeRecordsBtn = document.getElementById('close-records-btn');
-            const recordsList = document.getElementById('records-list');
-            const fireworksCanvas = document.getElementById('fireworks-canvas');
+  <div id="records-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-30">
+    <div class="bg-white rounded-lg p-6 max-w-lg w-full h-[80vh] flex flex-col">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">성공 기록</h2>
+        <button id="close-records-btn" class="p-2 rounded-full hover:bg-gray-200"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div id="records-list" class="flex-grow overflow-y-auto space-y-4 pr-2"></div>
+    </div>
+  </div>
 
-            const BOARD_SIZE = 8;
-            let boardState = [], regionMap = [], history = [];
-            let timerInterval, seconds = 0, hintCount = 0;
-            let isMouseDown = false, isDragging = false, startCell = null;
-            let currentErrors = new Set();
-
-            const mediumColors = ['bg-purple-300', 'bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-orange-300', 'bg-gray-300', 'bg-pink-300', 'bg-indigo-300'];
-            const lightBorderColors = ['border-purple-200', 'border-blue-200', 'border-green-200', 'border-yellow-200', 'border-orange-200', 'border-gray-200', 'border-pink-200', 'border-indigo-200'];
-            const queenIconName = 'chess_queen';
-            const xIconName = 'close';
-
-            function initGame() {
-                clearInterval(timerInterval);
-                seconds = 0;
-                hintCount = 0;
-                timerElement.textContent = '00:00';
-                history = []; updateUndoButton();
-                boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
-                generateRegions();
-                renderBoard();
-                startTimer();
-                saveState();
-                validateAndHighlight();
-            }
-            
-            function resetBoard() {
-                clearInterval(timerInterval);
-                seconds = 0;
-                hintCount = 0;
-                timerElement.textContent = '00:00';
-                history = []; updateUndoButton();
-                boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
-                // regionMap은 그대로 사용
-                renderBoard();
-                startTimer();
-                saveState();
-                validateAndHighlight();
-            }
-
-            function generateRegions() {
-                let success = false;
-                let generatedMap = null;
-                while (!success) {
-                    generatedMap = tryGenerateRegions();
-                    if (generatedMap) success = true;
-                }
-                regionMap = generatedMap;
-            }
-            
-            function tryGenerateRegions() {
-                const map = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(-1));
-                const unassignedCells = [];
-                for (let r = 0; r < BOARD_SIZE; r++) { for (let c = 0; c < BOARD_SIZE; c++) { unassignedCells.push({ r, c }); } }
-                for (let regionId = 0; regionId < BOARD_SIZE; regionId++) {
-                    if (unassignedCells.length === 0) return null;
-                    const startIndex = Math.floor(Math.random() * unassignedCells.length);
-                    const startCell = unassignedCells.splice(startIndex, 1)[0];
-                    map[startCell.r][startCell.c] = regionId;
-                    const regionCells = [startCell];
-                    let count = 1;
-                    while (count < BOARD_SIZE) {
-                        const frontier = [];
-                        for (const cell of regionCells) {
-                            const neighbors = getShuffledNeighbors(cell.r, cell.c);
-                            for (const { r: nR, c: nC } of neighbors) {
-                                if (isValid(nR, nC) && map[nR][nC] === -1 && !frontier.some(f => f.r === nR && f.c === nC)) {
-                                    frontier.push({ r: nR, c: nC });
-                                }
-                            }
-                        }
-                        if (frontier.length === 0) return null;
-                        const nextCell = frontier[Math.floor(Math.random() * frontier.length)];
-                        map[nextCell.r][nextCell.c] = regionId;
-                        regionCells.push(nextCell);
-                        const indexToRemove = unassignedCells.findIndex(c => c.r === nextCell.r && c.c === nextCell.c);
-                        if (indexToRemove > -1) unassignedCells.splice(indexToRemove, 1);
-                        count++;
-                    }
-                }
-                return map;
-            }
-            
-            function getShuffledNeighbors(r, c) { const n = [{r: r + 1, c}, {r: r - 1, c}, {r, c: c + 1}, {r, c: c - 1}]; for (let i = n.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [n[i], n[j]] = [n[j], n[i]]; } return n; }
-            function isValid(r, c) { return r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE; }
-
-            function renderBoard() {
-                boardElement.innerHTML = '';
-                boardElement.className = 'w-full grid grid-cols-8 bg-white cursor-pointer select-none border-2 border-black';
-                for (let r = 0; r < BOARD_SIZE; r++) {
-                    for (let c = 0; c < BOARD_SIZE; c++) {
-                        const cell = document.createElement('div');
-                        const regionId = regionMap[r][c];
-                        let borderClasses = '';
-                        if (c < BOARD_SIZE - 1 && regionId !== regionMap[r][c + 1]) { borderClasses += ' border-r-2 border-r-black'; } else { borderClasses += ` border-r ${lightBorderColors[regionId % lightBorderColors.length]}`; }
-                        if (r < BOARD_SIZE - 1 && regionId !== regionMap[r + 1][c]) { borderClasses += ' border-b-2 border-b-black'; } else { borderClasses += ` border-b ${lightBorderColors[regionId % lightBorderColors.length]}`; }
-                        cell.className = `relative aspect-square ${mediumColors[regionId % mediumColors.length]}${borderClasses}`;
-                        cell.dataset.r = r; cell.dataset.c = c;
-                        
-                        const content = document.createElement('span');
-                        content.className = 'absolute inset-0 flex items-center justify-center text-black text-3xl md:text-4xl';
-                        cell.appendChild(content);
-                        boardElement.appendChild(cell);
-                        updateCellDOM(r, c);
-                    }
-                }
-            }
-            
-            function updateCellDOM(r, c) {
-                const cell = boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`);
-                if (cell) {
-                    const content = cell.firstChild;
-                    content.textContent = '';
-                    content.classList.remove('material-symbols-outlined');
-                    if (boardState[r][c] === 1) {
-                        content.textContent = xIconName;
-                        content.classList.add('material-symbols-outlined');
-                    } else if (boardState[r][c] === 2) {
-                        content.textContent = queenIconName;
-                        content.classList.add('material-symbols-outlined');
-                    }
-                }
-            }
-            
-            function validateAndHighlight() {
-                const queens = [];
-                for (let r = 0; r < BOARD_SIZE; r++) { for (let c = 0; c < BOARD_SIZE; c++) { if (boardState[r][c] === 2) queens.push({ r, c }); } }
-                
-                const newErrors = new Set();
-                for (let i = 0; i < queens.length; i++) {
-                    for (let j = i + 1; j < queens.length; j++) {
-                        const q1 = queens[i]; const q2 = queens[j];
-                        const isAdjacentDiagonal = Math.abs(q1.r - q2.r) === 1 && Math.abs(q1.c - q2.c) === 1;
-                        if (q1.r === q2.r || q1.c === q2.c || isAdjacentDiagonal) {
-                            newErrors.add(`${q1.r}-${q1.c}`); newErrors.add(`${q2.r}-${q2.c}`);
-                        }
-                    }
-                }
-                const regionQueens = {};
-                queens.forEach(q => { const regionId = regionMap[q.r][q.c]; if (!regionQueens[regionId]) regionQueens[regionId] = []; regionQueens[regionId].push(q); });
-                for (const regionId in regionQueens) { if (regionQueens[regionId].length > 1) { regionQueens[regionId].forEach(q => newErrors.add(`${q.r}-${q.c}`)); } }
-
-                currentErrors.forEach(coord => {
-                    if (!newErrors.has(coord)) {
-                        const [r, c] = coord.split('-');
-                        const cell = boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`);
-                        cell?.classList.remove('error-highlight');
-                        cell?.firstChild.classList.remove('error-icon');
-                    }
-                });
-                newErrors.forEach(coord => {
-                    const [r, c] = coord.split('-');
-                    const cell = boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`);
-                    if (cell && !currentErrors.has(coord)) {
-                         cell.classList.add('error-highlight');
-                         const icon = cell.firstChild;
-                         icon.classList.add('error-icon');
-                         setTimeout(() => icon.classList.remove('error-icon'), 1500);
-                    }
-                });
-                currentErrors = newErrors;
-            }
-
-            function startTimer() { timerInterval = setInterval(() => { seconds++; const min = Math.floor(seconds / 60).toString().padStart(2, '0'); const sec = (seconds % 60).toString().padStart(2, '0'); timerElement.textContent = `${min}:${sec}`; }, 1000); }
-            function saveState() { history.push(JSON.stringify(boardState)); updateUndoButton(); }
-            function undo() { if (history.length > 1) { history.pop(); boardState = JSON.parse(history[history.length - 1]); renderBoard(); validateAndHighlight(); updateUndoButton(); } }
-            function updateUndoButton() { undoBtn.disabled = history.length <= 1; }
-
-            function handleInteractionStart(e) { e.preventDefault(); isMouseDown = true; isDragging = false; const cell = e.target.closest('[data-r]'); if (cell) startCell = cell; }
-            function handleInteractionMove(e) { if (!isMouseDown) return; e.preventDefault(); isDragging = true; const targetEl = e.type === 'touchmove' ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : e.target; const cell = targetEl.closest('[data-r]'); if (cell) { const r = parseInt(cell.dataset.r); const c = parseInt(cell.dataset.c); if (boardState[r][c] === 0) { boardState[r][c] = 1; updateCellDOM(r, c); } } }
-            function handleInteractionEnd(e) {
-                if (!isMouseDown) return;
-                e.preventDefault();
-                if (isDragging) {
-                    saveState();
-                } else if (startCell) {
-                    const r = parseInt(startCell.dataset.r);
-                    const c = parseInt(startCell.dataset.c);
-                    boardState[r][c] = (boardState[r][c] + 1) % 3;
-                    updateCellDOM(r, c);
-                    saveState();
-                    validateAndHighlight();
-                    checkWinCondition();
-                }
-                isMouseDown = false; isDragging = false; startCell = null;
-            }
-            
-            function checkWinCondition() {
-                const queens = []; for (let r = 0; r < BOARD_SIZE; r++) { for (let c = 0; c < BOARD_SIZE; c++) { if (boardState[r][c] === 2) queens.push({ r, c }); } }
-                if (queens.length !== BOARD_SIZE || currentErrors.size > 0) return false;
-                
-                clearInterval(timerInterval);
-                clearTimeElement.textContent = timerElement.textContent;
-                saveRecord();
-                winModal.classList.remove('hidden');
-                runFireworks();
-                return true;
-            }
-
-            function saveRecord() {
-                const records = JSON.parse(localStorage.getItem('queensRecords')) || [];
-                const newRecord = { date: new Date().toISOString(), time: seconds, hints: hintCount, boardState: boardState, regionMap: regionMap };
-                records.unshift(newRecord);
-                localStorage.setItem('queensRecords', JSON.stringify(records));
-            }
-
-            function renderRecords() {
-                const records = JSON.parse(localStorage.getItem('queensRecords')) || [];
-                recordsList.innerHTML = '';
-                if (records.length === 0) {
-                    recordsList.innerHTML = `<p class="text-center text-gray-500">아직 성공한 기록이 없어요.</p>`;
-                    return;
-                }
-                records.forEach(record => {
-                    const recordEl = document.createElement('div');
-                    recordEl.className = 'flex items-center space-x-4 p-2 border rounded-lg';
-                    const min = Math.floor(record.time / 60).toString().padStart(2, '0');
-                    const sec = (record.time % 60).toString().padStart(2, '0');
-                    const date = new Date(record.date);
-                    const dateString = `${date.getFullYear()}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getDate().toString().padStart(2, '0')}`;
-                    let miniBoardHTML = '<div class="grid grid-cols-8 w-24 h-24 border border-gray-400">';
-                    for (let r = 0; r < BOARD_SIZE; r++) {
-                        for (let c = 0; c < BOARD_SIZE; c++) {
-                            const regionId = record.regionMap[r][c];
-                            const colorClass = mediumColors[regionId % mediumColors.length];
-                            const hasQueen = record.boardState[r][c] === 2;
-                            miniBoardHTML += `<div class="${colorClass} relative flex items-center justify-center">${hasQueen ? '<div class="w-1.5 h-1.5 bg-black rounded-full"></div>' : ''}</div>`;
-                        }
-                    }
-                    miniBoardHTML += '</div>';
-                    recordEl.innerHTML = `${miniBoardHTML}
-                        <div class="flex-grow">
-                            <p class="font-bold text-lg">${min}:${sec}</p>
-                            <p class="text-sm text-gray-500">${dateString}</p>
-                            <p class="text-xs text-gray-500 mt-1">힌트: ${record.hints || 0}회</p>
-                        </div>`;
-                    recordsList.appendChild(recordEl);
-                });
-            }
-
-            function applyHintAnimation(cell) {
-                if(cell) {
-                    cell.classList.remove('hint-animation'); // 애니메이션 재시작을 위해 클래스 제거
-                    void cell.offsetWidth; // 리플로우 강제
-                    cell.classList.add('hint-animation');
-                }
-            }
-
-            function showHint() {
-                hintCount++;
-                if (currentErrors.size > 0) {
-                    currentErrors.forEach(coord => {
-                        const [r, c] = coord.split('-');
-                        applyHintAnimation(boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`));
-                    });
-                    return;
-                }
-                
-                const wrongXs = findWrongXs();
-                if (wrongXs.length > 0) {
-                    wrongXs.forEach(({r, c}) => {
-                        applyHintAnimation(boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`));
-                    });
-                    return;
-                }
-
-                const safeXSpots = findSafeXSpots();
-                safeXSpots.slice(0, 3).forEach(({r, c}) => {
-                    if(boardState[r][c] === 0) {
-                       boardState[r][c] = 1;
-                       updateCellDOM(r, c);
-                       applyHintAnimation(boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`));
-                    }
-                });
-                if(safeXSpots.length > 0) saveState();
-            }
-
-            function findWrongXs() {
-                const wrongXs = [];
-                const tempState = JSON.parse(JSON.stringify(boardState));
-                
-                for (let r = 0; r < BOARD_SIZE; r++) {
-                    for (let c = 0; c < BOARD_SIZE; c++) {
-                        if (tempState[r][c] === 1) { // X가 있는 칸이라면
-                            tempState[r][c] = 0; // 임시로 비워보고
-                            if (isForcedMove(r, c, tempState)) {
-                                wrongXs.push({r, c});
-                            }
-                            tempState[r][c] = 1; // 원상복구
-                        }
-                    }
-                }
-                return wrongXs;
-            }
-
-            function findSafeXSpots() {
-                const safeSpots = [];
-                const emptyCells = [];
-                for (let r = 0; r < BOARD_SIZE; r++) { for (let c = 0; c < BOARD_SIZE; c++) { if (boardState[r][c] === 0) emptyCells.push({r, c}); } }
-                
-                for (const {r, c} of emptyCells) {
-                    if (!isMoveValid(r, c, boardState)) {
-                        safeSpots.push({r, c});
-                    }
-                }
-                for (let i = safeSpots.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [safeSpots[i], safeSpots[j]] = [safeSpots[j], safeSpots[i]]; }
-                return safeSpots;
-            }
-            
-            function isForcedMove(r, c, tempState) {
-                // 행 검사
-                let rowCandidates = 0;
-                for(let i=0; i<BOARD_SIZE; i++) { if(isMoveValid(r, i, tempState)) rowCandidates++; }
-                if(rowCandidates === 1 && isMoveValid(r, c, tempState)) return true;
-                // 열 검사
-                let colCandidates = 0;
-                for(let i=0; i<BOARD_SIZE; i++) { if(isMoveValid(i, c, tempState)) colCandidates++; }
-                if(colCandidates === 1 && isMoveValid(i, c, tempState)) return true;
-                // 영역 검사
-                let regionCandidates = 0;
-                const regionId = regionMap[r][c];
-                for(let rr=0; rr<BOARD_SIZE; rr++) { for(let cc=0; cc<BOARD_SIZE; cc++) { if(regionMap[rr][cc] === regionId && isMoveValid(rr, cc, tempState)) regionCandidates++; } }
-                if(regionCandidates === 1 && isMoveValid(r, c, tempState)) return true;
-
-                return false;
-            }
-            
-            function isMoveValid(r, c, currentState) {
-                if (currentState[r][c] !== 0) return false;
-                const queens = [];
-                for (let qr = 0; qr < BOARD_SIZE; qr++) { for (let qc = 0; qc < BOARD_SIZE; qc++) { if (currentState[qr][qc] === 2) queens.push({ r: qr, c: qc }); } }
-                const newQueen = {r, c};
-                for(const q of queens) {
-                    const isAdjacentDiagonal = Math.abs(q.r - newQueen.r) === 1 && Math.abs(q.c - newQueen.c) === 1;
-                    if (q.r === newQueen.r || q.c === newQueen.c || isAdjacentDiagonal) return false;
-                }
-                const regionId = regionMap[newQueen.r][newQueen.c];
-                for(const q of queens) { if (regionMap[q.r][q.c] === regionId) return false; }
-                return true;
-            }
-
-            let animationFrameId;
-            function runFireworks(){let ctx=fireworksCanvas.getContext('2d');fireworksCanvas.width=window.innerWidth;fireworksCanvas.height=window.innerHeight;let fireworks=[],particles=[];function Firework(sx,sy,tx,ty){this.x=sx;this.y=sy;this.sx=sx;this.sy=sy;this.tx=tx;this.ty=ty;this.distanceToTarget=Math.sqrt(Math.pow(tx-sx,2)+Math.pow(ty-sy,2));this.distanceTraveled=0;this.coordinates=[];this.coordinateCount=3;while(this.coordinateCount--){this.coordinates.push([this.x,this.y])}this.angle=Math.atan2(ty-sy,tx-sx);this.speed=2;this.acceleration=1.05;this.brightness=Math.random()*50+50}Firework.prototype.update=function(index){this.coordinates.pop();this.coordinates.unshift([this.x,this.y]);this.speed*=this.acceleration;let vx=Math.cos(this.angle)*this.speed;let vy=Math.sin(this.angle)*this.speed;this.distanceTraveled=Math.sqrt(Math.pow(this.x-this.sx,2)+Math.pow(this.y-this.sy,2));if(this.distanceTraveled>=this.distanceToTarget){fireworks.splice(index,1);let particleCount=30;while(particleCount--){particles.push(new Particle(this.tx,this.ty))}}else{this.x+=vx;this.y+=vy}}
-            Firework.prototype.draw=function(){ctx.beginPath();ctx.moveTo(this.coordinates[this.coordinates.length-1][0],this.coordinates[this.coordinates.length-1][1]);ctx.lineTo(this.x,this.y);ctx.strokeStyle='hsl('+Math.random()*360+', 100%, '+this.brightness+'%)';ctx.stroke()}
-            function Particle(x,y){this.x=x;this.y=y;this.coordinates=[];this.coordinateCount=5;while(this.coordinateCount--){this.coordinates.push([this.x,this.y])}this.angle=Math.random()*Math.PI*2;this.speed=Math.random()*10+1;this.friction=0.95;this.gravity=1;this.hue=Math.random()*360;this.brightness=Math.random()*50+50;this.alpha=1;this.decay=Math.random()*0.03+0.015}Particle.prototype.update=function(index){this.coordinates.pop();this.coordinates.unshift([this.x,this.y]);this.speed*=this.friction;this.x+=Math.cos(this.angle)*this.speed;this.y+=Math.sin(this.angle)*this.speed+this.gravity;this.alpha-=this.decay;if(this.alpha<=this.decay){particles.splice(index,1)}}
-            Particle.prototype.draw=function(){ctx.beginPath();ctx.moveTo(this.coordinates[this.coordinates.length-1][0],this.coordinates[this.coordinates.length-1][1]);ctx.lineTo(this.x,this.y);ctx.strokeStyle='hsla('+this.hue+', 100%, '+this.brightness+'%, '+this.alpha+')';ctx.stroke()}
-            function loop(){animationFrameId=requestAnimationFrame(loop);ctx.globalCompositeOperation='destination-out';ctx.fillStyle='rgba(0, 0, 0, 0.5)';ctx.fillRect(0,0,fireworksCanvas.width,fireworksCanvas.height);ctx.globalCompositeOperation='lighter';let i=fireworks.length;while(i--){fireworks[i].draw();fireworks[i].update(i)}let j=particles.length;while(j--){particles[j].draw();particles[j].update(j)}if(Math.random()<0.05){fireworks.push(new Firework(fireworksCanvas.width/2,fireworksCanvas.height,Math.random()*fireworksCanvas.width,Math.random()*fireworksCanvas.height/2))}}
-            cancelAnimationFrame(animationFrameId);loop()}
-            function stopFireworks(){cancelAnimationFrame(animationFrameId);const ctx=fireworksCanvas.getContext('2d');ctx.clearRect(0,0,fireworksCanvas.width,fireworksCanvas.height)}
-
-            // --- 이벤트 리스너 ---
-            boardElement.addEventListener('mousedown', handleInteractionStart);
-            boardElement.addEventListener('mousemove', handleInteractionMove);
-            document.addEventListener('mouseup', handleInteractionEnd);
-            boardElement.addEventListener('touchstart', handleInteractionStart, { passive: false });
-            boardElement.addEventListener('touchmove', handleInteractionMove, { passive: false });
-            boardElement.addEventListener('touchend', handleInteractionEnd, { passive: false });
-
-            newGameBtn.addEventListener('click', initGame);
-            resetBtn.addEventListener('click', resetBoard);
-            difficultySelect.addEventListener('change', initGame);
-            undoBtn.addEventListener('click', undo);
-            hintBtn.addEventListener('click', showHint);
-            rulesBtn.addEventListener('click', () => rulesModal.classList.remove('hidden'));
-            closeRulesBtn.addEventListener('click', () => rulesModal.classList.add('hidden'));
-            
-            playAgainBtn.addEventListener('click', () => { winModal.classList.add('hidden'); stopFireworks(); initGame(); });
-            viewBoardBtn.addEventListener('click', () => { winModal.classList.add('hidden'); stopFireworks(); });
-
-            recordsBtn.addEventListener('click', () => { renderRecords(); recordsModal.classList.remove('hidden'); });
-            closeRecordsBtn.addEventListener('click', () => recordsModal.classList.add('hidden'));
-
-            initGame();
-        });
-    </script>
+  <script src="js/main.js"></script>
 </body>
 </html>

@@ -1,0 +1,48 @@
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.error-highlight {
+  /* background-color: rgba(255, 107, 107, 0.6) !important; */
+}
+
+.error-icon {
+  color: #dc2626 !important;
+}
+
+@keyframes pulse-hint {
+  0% {
+    translate: 0 0;
+  }
+  70% {
+    translate: 0 -4px;
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+.hint-animation {
+  animation: pulse-hint 0.3s ease-out;
+}
+
+.material-symbols-outlined {
+  pointer-events: none;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none;
+}
+
+button {
+  transition: all 0.3s ease;
+
+  &:active {
+    scale: 0.92;
+  }
+}
