@@ -853,7 +853,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 보드 크기에 따라 텍스트 크기 조정
         const textSize = BOARD_SIZE <= 8 ? 'text-3xl md:text-4xl' : 
                         BOARD_SIZE <= 10 ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl';
-        content.className = `absolute inset-0 flex items-center justify-center text-black ${textSize}`;
+        content.className = `transition-all duration-300 absolute inset-0 flex items-center justify-center text-black ${textSize}`;
+
         cell.appendChild(content);
         boardElement.appendChild(cell);
         updateCellDOM(r, c);
@@ -865,15 +866,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const cell = boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`);
     if (cell) {
       const content = cell.firstChild;
-      content.textContent = '';
       content.classList.remove('material-symbols-outlined');
       if (boardState[r][c] === 1) {
         content.textContent = xIconName;
-        content.classList.add('material-symbols-outlined', 'transition-colors', 'duration-300');
+        content.animate([
+          {
+            fontSize: '0',
+          },
+          {
+            fontSize: '32px',
+          }
+        ], {
+          duration: 100,
+          easing: 'ease-out',
+        });
       } else if (boardState[r][c] === 2) {
-        content.textContent = queenIconName;
-        content.classList.add('material-symbols-outlined', 'transition-colors', 'duration-300');
+        content.animate([
+          {
+            fontSize: '32px',
+          },
+          {
+            fontSize: '0',
+          },
+          {
+            fontSize: '32px',
+          }
+        ], {
+          duration: 200,
+          easing: 'linear',
+        });
+        setTimeout(() => {
+          content.textContent = queenIconName;
+        }, 150)
+      } else if (boardState[r][c] === 0) {
+        content.animate([
+          {
+            fontSize: '32px',
+          },
+          {
+            fontSize: '0',
+          },
+        ], {
+          duration: 100,
+          easing: 'linear',
+        });
+        setTimeout(() => {
+          content.textContent = '';
+        }, 150)
       }
+      content.classList.add('material-symbols-outlined');
     }
   }
 
