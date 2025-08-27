@@ -1,0 +1,15 @@
+{
+  "name": "Linkedin Queens",
+  "short_name": "Queens",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/IMG_6769.png",
+      "type": "image/png",
+      "sizes": "768x768"
+    },
+  ]
+}
