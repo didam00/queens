@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingProgress = document.getElementById('loading-progress');
   const loadingPercentage = document.getElementById('loading-percentage');
 
+  // iOS 버튼 프레스 피드백 설정
+  setupPressFeedback();
+
   let BOARD_SIZE = 8; // 동적으로 변경 가능한 보드 크기
   let boardState = [],
     regionMap = [],
@@ -51,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let solutionCount = 1; // 현재 보드의 해의 개수
   let pendingBoardSize = 8; // 적용 대기 중인 보드 크기
 
-  const darkColors = ['bg-purple-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-orange-400', 'bg-gray-400', 'bg-pink-400', 'bg-indigo-400', 'bg-teal-400', 'bg-lime-400'];
   const mediumColors = ['bg-purple-300', 'bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-orange-300', 'bg-gray-300', 'bg-pink-300', 'bg-indigo-300', 'bg-teal-300', 'bg-lime-300'];
   const lightBorderColors = ['border-purple-200', 'border-blue-200', 'border-green-200', 'border-yellow-200', 'border-orange-200', 'border-gray-200', 'border-pink-200', 'border-indigo-200', 'border-teal-200', 'border-lime-200'];
   const queenIconName = 'chess_queen';
@@ -845,7 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           borderClasses += ` border-b ${lightBorderColors[regionId % lightBorderColors.length]}`;
         }
-        cell.className = `relative aspect-square ${mediumColors[regionId % mediumColors.length]}${borderClasses}`;
+        cell.className = `relative aspect-square ${mediumColors[regionId % mediumColors.length]}${((r + c) % 2 === 0) ? '/85' : ''}`;
         cell.dataset.r = r;
         cell.dataset.c = c;
 
@@ -854,6 +856,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const textSize = BOARD_SIZE <= 8 ? 'text-3xl md:text-4xl' : 
                         BOARD_SIZE <= 10 ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl';
         content.className = `transition-all duration-300 absolute inset-0 flex items-center justify-center text-black ${textSize}`;
+
+        const borderRadius = '10px';
+        if (r === 0 && c === 0) {
+          cell.style.borderTopLeftRadius = borderRadius;
+        } else if (r === 0 && c === BOARD_SIZE - 1) {
+          cell.style.borderTopRightRadius = borderRadius;
+        } else if (r === BOARD_SIZE - 1 && c === 0) {
+          cell.style.borderBottomLeftRadius = borderRadius;
+        } else if (r === BOARD_SIZE - 1 && c === BOARD_SIZE - 1) {
+          cell.style.borderBottomRightRadius = borderRadius;
+        }
 
         cell.appendChild(content);
         boardElement.appendChild(cell);
@@ -1165,7 +1178,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     records.forEach(record => {
       const recordEl = document.createElement('div');
-      recordEl.className = 'flex items-center space-x-4 p-2 border rounded-lg';
+      recordEl.className = 'flex items-center space-x-4 p-2';
       const min = Math.floor(record.time / 60).toString().padStart(2, '0');
       const sec = (record.time % 60).toString().padStart(2, '0');
       const date = new Date(record.date);
@@ -1207,6 +1220,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showHint() {
     hintCount++;
+
+    // 1. 잘못 놓인 queen 표시를 제거
+    const wrongQueens = [];
+
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (boardState[r][c] === 2 && !canPlaceQueenHere(r, c)) {
+          wrongQueens.push({ r, c });
+        }
+      }
+    }
+
+    if (wrongQueens.length > 0) {
+      // 첫 번째 잘못된 queen 표시 제거
+      const wrongQueen = wrongQueens[0];
+      boardState[wrongQueen.r][wrongQueen.c] = 1;
+      updateCellDOM(wrongQueen.r, wrongQueen.c);
+      const cell = boardElement.querySelector(`[data-r='${wrongQueen.r}'][data-c='${wrongQueen.c}']`);
+      if (cell) {
+        applyHintAnimation(cell);
+      }
+      saveState();
+      validateAndHighlight();
+      return;
+    }
 
     // 2. 잘못 놓인 X 표시들을 제거 (퀸을 놓을 수 있는 곳에 X가 있으면 제거)
     const wrongXs = findWrongXs();
@@ -1779,6 +1817,29 @@ document.addEventListener('DOMContentLoaded', () => {
     loadingProgress.style.width = `${percentage}%`;
     loadingPercentage.textContent = `${Math.round(percentage)}%`;
     loadingStatus.textContent = status;
+  }
+
+  // iOS에서도 버튼 누름(press) 피드백을 주기 위한 헬퍼
+  function setupPressFeedback() {
+    const pressTargets = document.querySelectorAll('button');
+    const add = el => { if (!el.disabled) el.classList.add('is-pressing'); };
+    const remove = el => el.classList.remove('is-pressing');
+
+    pressTargets.forEach(btn => {
+      // Pointer Events (iOS 13+ 포함 다양한 환경 커버)
+      btn.addEventListener('pointerdown', () => add(btn), { passive: true });
+      btn.addEventListener('pointerup', () => remove(btn), { passive: true });
+      btn.addEventListener('pointercancel', () => remove(btn), { passive: true });
+      btn.addEventListener('pointerleave', () => remove(btn), { passive: true });
+
+      // 키보드 접근성: Enter/Space 누름 동안 효과
+      btn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') add(btn);
+      });
+      btn.addEventListener('keyup', e => {
+        if (e.key === 'Enter' || e.key === ' ') remove(btn);
+      });
+    });
   }
 
   // 설정 관련 함수들
