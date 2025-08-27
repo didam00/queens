@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const boardElement = document.getElementById('game-board');
   const timerElement = document.getElementById('timer');
   const solutionCountElement = document.getElementById('solution-count');
+  const difficultyDisplay = document.getElementById('difficulty-display');
   const newGameBtn = document.getElementById('new-game-btn');
   const resetBtn = document.getElementById('reset-btn');
   const undoBtn = document.getElementById('undo-btn');
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const applySettingsBtn = document.getElementById('apply-settings-btn');
   const boardSizeBtns = document.querySelectorAll('.board-size-btn');
   const solutionCountBtns = document.querySelectorAll('.solution-count-btn');
+  const difficultyBtns = document.querySelectorAll('.difficulty-btn');
   const themeBtns = document.querySelectorAll('.theme-btn');
   
   // 로딩 관련 요소들
@@ -56,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingBoardSize = 8; // 적용 대기 중인 보드 크기
   let preferredSolutionCount = 'random'; // 설정된 해의 개수
   let pendingPreferredSolutionCount = 'random';
+  let preferredDifficulty = 'random';
+  let pendingPreferredDifficulty = 'random';
+  let currentDifficulty = 'easy';
   let currentTheme = 'light';
   let pendingTheme = 'light';
 
@@ -79,7 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
     isGameFinished = false; // 게임 상태 초기화
     updateUndoButton();
     boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
-    
+    currentDifficulty = preferredDifficulty === 'random' ? getRandomDifficulty() : preferredDifficulty;
+    updateDifficultyDisplay();
     await generateRegions();
     renderBoard();
     
@@ -236,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function tryGenerateRegionsWithSolutionCount() {
     // 1단계: 다양한 크기의 연결된 영역들을 생성
-    const map = generateVariedRegions();
+    const map = generateVariedRegions(currentDifficulty);
     if (!map) return null;
     
     // 2단계: 백트래킹으로 모든 해를 찾기
@@ -252,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function tryGenerateRegionsWithSolutionCountAsync() {
     // 비동기 버전 - UI 업데이트를 위한 대기 시간 포함
-    const map = generateVariedRegions();
+    const map = generateVariedRegions(currentDifficulty);
     if (!map) return null;
     
     // 짧은 대기를 통해 UI 업데이트 허용
@@ -272,6 +278,17 @@ document.addEventListener('DOMContentLoaded', () => {
     solutionCountElement.textContent = `${solutionCount}개의 해`;
   }
 
+  function getRandomDifficulty() {
+    const options = ['easy', 'medium', 'hard'];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  function updateDifficultyDisplay() {
+    const labels = { easy: '쉬움', medium: '보통', hard: '어려움' };
+    const label = labels[currentDifficulty] || '랜덤';
+    difficultyDisplay.textContent = `난이도: ${label}`;
+  }
+
   function solvePuzzleWithSolutionCount(regionMap) {
     // 백트래킹으로 모든 가능한 해를 찾기 (최대 5개까지)
     const allSolutions = findAllSolutions(regionMap, 5);
@@ -286,13 +303,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  function generateVariedRegions() {
+  function generateVariedRegions(difficulty) {
     const map = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(-1));
-    
+
     // 다양한 패턴으로 시작점들을 동적 생성
     const patterns = generateDynamicPatterns();
     const selectedPattern = patterns[Math.floor(Math.random() * patterns.length)];
-    const regionSizes = generateRandomRegionSizes();
+    let regionSizes;
+    if (BOARD_SIZE === 8 && ['easy', 'medium', 'hard'].includes(difficulty)) {
+      regionSizes = getRegionSizes(difficulty);
+    } else {
+      regionSizes = generateRandomRegionSizes();
+    }
     
     // 각 영역을 시드에서 시작하여 확장
     for (let regionId = 0; regionId < BOARD_SIZE; regionId++) {
@@ -1856,6 +1878,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function updateDifficultyButtons() {
+    difficultyBtns.forEach(btn => {
+      if (btn.dataset.difficulty === pendingPreferredDifficulty) {
+        btn.className = 'difficulty-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition dark:bg-blue-600 dark:hover:bg-blue-700';
+      } else {
+        btn.className = 'difficulty-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
+      }
+    });
+  }
+
   function updateThemeButtons() {
     themeBtns.forEach(btn => {
       if (btn.dataset.theme === pendingTheme) {
@@ -1875,6 +1907,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const boardSizeChanged = pendingBoardSize !== BOARD_SIZE;
     const solutionPreferenceChanged = pendingPreferredSolutionCount !== preferredSolutionCount;
+    const difficultyChanged = pendingPreferredDifficulty !== preferredDifficulty;
     const themeChanged = pendingTheme !== currentTheme;
 
     if (boardSizeChanged) {
@@ -1883,6 +1916,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (solutionPreferenceChanged) {
       preferredSolutionCount = pendingPreferredSolutionCount;
     }
+    if (difficultyChanged) {
+      preferredDifficulty = pendingPreferredDifficulty;
+    }
     if (themeChanged) {
       currentTheme = pendingTheme;
       applyTheme(currentTheme);
@@ -1890,8 +1926,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     localStorage.setItem('queensSolutionPreference', preferredSolutionCount);
+    localStorage.setItem('queensDifficulty', preferredDifficulty);
 
-    if (boardSizeChanged || solutionPreferenceChanged) {
+    if (boardSizeChanged || solutionPreferenceChanged || difficultyChanged) {
       await initGame();
     }
   }
@@ -1903,6 +1940,10 @@ document.addEventListener('DOMContentLoaded', () => {
       preferredSolutionCount = savedPreference;
       pendingPreferredSolutionCount = savedPreference;
     }
+    const savedDifficulty = localStorage.getItem('queensDifficulty');
+    if (savedDifficulty) {
+      preferredDifficulty = pendingPreferredDifficulty = savedDifficulty;
+    }
     const savedTheme = localStorage.getItem('queensTheme');
     if (savedTheme) {
       currentTheme = pendingTheme = savedTheme;
@@ -1911,6 +1952,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     applyTheme(currentTheme);
     updateThemeButtons();
+    updateDifficultyButtons();
     // const savedBoardSize = localStorage.getItem('queensBoardSize');
     // if (savedBoardSize) {
     //   BOARD_SIZE = parseInt(savedBoardSize);
@@ -1937,9 +1979,11 @@ document.addEventListener('DOMContentLoaded', () => {
   settingsBtn.addEventListener('click', () => {
     pendingBoardSize = BOARD_SIZE;
     pendingPreferredSolutionCount = preferredSolutionCount;
+    pendingPreferredDifficulty = preferredDifficulty;
     pendingTheme = currentTheme;
     updateBoardSizeButtons();
     updateSolutionCountButtons();
+    updateDifficultyButtons();
     updateThemeButtons();
     settingsModal.classList.remove('hidden');
   });
@@ -1958,6 +2002,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       pendingPreferredSolutionCount = btn.dataset.count;
       updateSolutionCountButtons();
+    });
+  });
+
+  difficultyBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingPreferredDifficulty = btn.dataset.difficulty;
+      updateDifficultyButtons();
     });
   });
 
