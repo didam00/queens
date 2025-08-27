@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // DOM 요소들
   const boardElement = document.getElementById('game-board');
   const timerElement = document.getElementById('timer');
-  const currentDifficultyElement = document.getElementById('current-difficulty');
+  const solutionCountElement = document.getElementById('solution-count');
   const newGameBtn = document.getElementById('new-game-btn');
   const resetBtn = document.getElementById('reset-btn');
   const undoBtn = document.getElementById('undo-btn');
@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeSettingsBtn = document.getElementById('close-settings-btn');
   const applySettingsBtn = document.getElementById('apply-settings-btn');
   const boardSizeBtns = document.querySelectorAll('.board-size-btn');
+  const solutionCountBtns = document.querySelectorAll('.solution-count-btn');
   
   // 로딩 관련 요소들
   const loadingOverlay = document.getElementById('loading-overlay');
@@ -50,9 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let dragMode = null; // 'add' 또는 'remove' 모드
   let isGameFinished = false; // 게임이 끝났는지 추적
   let solutionBoard = []; // 정답 보드 상태
-  let currentDifficulty = 'medium'; // 현재 난이도
   let solutionCount = 1; // 현재 보드의 해의 개수
   let pendingBoardSize = 8; // 적용 대기 중인 보드 크기
+  let preferredSolutionCount = 'random'; // 설정된 해의 개수
+  let pendingPreferredSolutionCount = 'random';
 
   const mediumColors = ['bg-purple-300', 'bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-orange-300', 'bg-gray-300', 'bg-pink-300', 'bg-indigo-300', 'bg-teal-300', 'bg-lime-300'];
   const lightBorderColors = ['border-purple-200', 'border-blue-200', 'border-green-200', 'border-yellow-200', 'border-orange-200', 'border-gray-200', 'border-pink-200', 'border-indigo-200', 'border-teal-200', 'border-lime-200'];
@@ -169,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
     async function generateRegions() {
-    currentDifficultyElement.textContent = '난이도: 생성 중...';
+    solutionCountElement.textContent = '해의 수: 생성 중...';
     showLoading();
     
     let success = false;
@@ -185,10 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const result = await tryGenerateRegionsWithSolutionCountAsync();
         if (result && result.map && result.solution && result.solutionCount >= 1 && result.solutionCount <= 3) {
-          generatedMap = result.map;
-          solutionBoard = result.solution;
-          solutionCount = result.solutionCount;
-          success = true;
+          const desired = preferredSolutionCount === 'random' ? null : parseInt(preferredSolutionCount);
+          if (desired === null || result.solutionCount === desired) {
+            generatedMap = result.map;
+            solutionBoard = result.solution;
+            solutionCount = result.solutionCount;
+            success = true;
+          }
         }
         attempts++;
         
@@ -212,23 +217,14 @@ document.addEventListener('DOMContentLoaded', () => {
         regionMap = generatedMap;
       }
       
-      setLoadingProgress(95, '난이도 계산 중...');
+      setLoadingProgress(95, '해 수 계산 중...');
       await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // 해의 개수에 따라 난이도 설정
-      if (solutionCount === 1) {
-        currentDifficulty = 'hard';
-      } else if (solutionCount === 2) {
-        currentDifficulty = 'medium';
-      } else if (solutionCount === 3) {
-        currentDifficulty = 'easy';
-      }
-      
+
       setLoadingProgress(100, '완료!');
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // UI 업데이트
-      updateDifficultyDisplay();
+      updateSolutionCountDisplay();
       
     } finally {
       hideLoading();
@@ -269,10 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  function updateDifficultyDisplay() {
-    const difficultyText = currentDifficulty === 'easy' ? '쉬움' : 
-                          currentDifficulty === 'medium' ? '보통' : '어려움';
-    currentDifficultyElement.textContent = `${difficultyText}`;
+  function updateSolutionCountDisplay() {
+    solutionCountElement.textContent = `${solutionCount}개의 해`;
   }
 
   function solvePuzzleWithSolutionCount(regionMap) {
@@ -1155,13 +1149,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveRecord() {
     const records = JSON.parse(localStorage.getItem('queensRecords')) || [];
-    const newRecord = { 
-      date: new Date().toISOString(), 
-      time: seconds, 
+    const newRecord = {
+      date: new Date().toISOString(),
+      time: seconds,
       hints: hintCount,
-      boardState: boardState, 
+      boardState: boardState,
       regionMap: regionMap,
-      difficulty: currentDifficulty,
       solutionCount: solutionCount,
       boardSize: BOARD_SIZE
     };
@@ -1195,16 +1188,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       miniBoardHTML += '</div>';
-      const difficultyText = record.difficulty === 'easy' ? '쉬움' : 
-                           record.difficulty === 'medium' ? '보통' : 
-                           record.difficulty === 'hard' ? '어려움' : '보통'; // 기본값
-      const solutionCountText = record.solutionCount ? ` (해: ${record.solutionCount}개)` : '';
+      const solutionCountText = record.solutionCount ? `해: ${record.solutionCount}개` : '';
       const boardSizeText = record.boardSize ? ` • ${record.boardSize}x${record.boardSize}` : '';
       recordEl.innerHTML = `${miniBoardHTML}
         <div class="flex-grow">
           <p class="font-bold text-lg">${min}:${sec}</p>
           <p class="text-sm text-gray-500">${dateString}</p>
-          <p class="text-xs text-gray-500 mt-1">힌트: ${record.hints || 0}회 • ${difficultyText}${solutionCountText}${boardSizeText}</p>
+          <p class="text-xs text-gray-500 mt-1">힌트: ${record.hints || 0}회${solutionCountText ? ' • ' + solutionCountText : ''}${boardSizeText}</p>
         </div>`;
       recordsList.appendChild(recordEl);
     });
@@ -1853,22 +1843,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function applyBoardSizeChange() {
+  function updateSolutionCountButtons() {
+    solutionCountBtns.forEach(btn => {
+      if (btn.dataset.count === pendingPreferredSolutionCount) {
+        btn.className = 'solution-count-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition';
+      } else {
+        btn.className = 'solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition';
+      }
+    });
+  }
+
+  async function applySettings() {
     settingsModal.classList.add('hidden');
-    
-    if (pendingBoardSize !== BOARD_SIZE) {
+
+    const boardSizeChanged = pendingBoardSize !== BOARD_SIZE;
+    const solutionPreferenceChanged = pendingPreferredSolutionCount !== preferredSolutionCount;
+
+    if (boardSizeChanged) {
       BOARD_SIZE = pendingBoardSize;
-      
-      // localStorage에 설정 저장
-      // localStorage.setItem('queensBoardSize', BOARD_SIZE.toString());
-      
-      // 새 게임 시작
+    }
+    if (solutionPreferenceChanged) {
+      preferredSolutionCount = pendingPreferredSolutionCount;
+    }
+
+    localStorage.setItem('queensSolutionPreference', preferredSolutionCount);
+
+    if (boardSizeChanged || solutionPreferenceChanged) {
       await initGame();
     }
   }
 
   // 설정 로드
   function loadSettings() {
+    const savedPreference = localStorage.getItem('queensSolutionPreference');
+    if (savedPreference) {
+      preferredSolutionCount = savedPreference;
+      pendingPreferredSolutionCount = savedPreference;
+    }
     // const savedBoardSize = localStorage.getItem('queensBoardSize');
     // if (savedBoardSize) {
     //   BOARD_SIZE = parseInt(savedBoardSize);
@@ -1894,17 +1905,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // 설정 모달 이벤트 리스너
   settingsBtn.addEventListener('click', () => {
     pendingBoardSize = BOARD_SIZE;
+    pendingPreferredSolutionCount = preferredSolutionCount;
     updateBoardSizeButtons();
+    updateSolutionCountButtons();
     settingsModal.classList.remove('hidden');
   });
   closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
-  applySettingsBtn.addEventListener('click', applyBoardSizeChange);
+  applySettingsBtn.addEventListener('click', applySettings);
 
   // 보드 크기 버튼 이벤트 리스너
   boardSizeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       pendingBoardSize = parseInt(btn.dataset.size);
       updateBoardSizeButtons();
+    });
+  });
+
+  solutionCountBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingPreferredSolutionCount = btn.dataset.count;
+      updateSolutionCountButtons();
     });
   });
 
