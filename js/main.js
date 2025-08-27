@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let preferredDifficulty = 'random';
   let pendingPreferredDifficulty = 'random';
   let currentDifficulty = 'easy';
+  let evaluatedDifficulty = 'easy';
   let currentTheme = 'light';
   let pendingTheme = 'light';
 
@@ -85,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUndoButton();
     boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
     currentDifficulty = preferredDifficulty === 'random' ? getRandomDifficulty() : preferredDifficulty;
+    evaluatedDifficulty = currentDifficulty;
     updateDifficultyDisplay();
     await generateRegions();
     renderBoard();
@@ -197,7 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await tryGenerateRegionsWithSolutionCountAsync();
         if (result && result.map && result.solution && result.solutionCount >= 1 && result.solutionCount <= 3) {
           const desired = preferredSolutionCount === 'random' ? null : parseInt(preferredSolutionCount);
-          if (desired === null || result.solutionCount === desired) {
+          const candidateDifficulty = classifyDifficulty(result.map);
+          if ((desired === null || result.solutionCount === desired) &&
+              difficultyRank(candidateDifficulty) >= difficultyRank(currentDifficulty)) {
             generatedMap = result.map;
             solutionBoard = result.solution;
             solutionCount = result.solutionCount;
@@ -225,7 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         regionMap = generatedMap;
       }
-      
+
+      evaluatedDifficulty = classifyDifficulty(regionMap);
       setLoadingProgress(95, '해 수 계산 중...');
       await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -234,6 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // UI 업데이트
       updateSolutionCountDisplay();
+      updateDifficultyDisplay();
       
     } finally {
       hideLoading();
@@ -285,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateDifficultyDisplay() {
     const labels = { easy: '쉬움', medium: '보통', hard: '어려움' };
-    const label = labels[currentDifficulty] || '랜덤';
+    const label = labels[evaluatedDifficulty] || labels[currentDifficulty] || '랜덤';
     difficultyDisplay.textContent = `${label}`;
   }
 
@@ -301,6 +307,60 @@ document.addEventListener('DOMContentLoaded', () => {
       solutions: allSolutions,
       solutionCount: allSolutions.length
     };
+  }
+
+  function classifyDifficulty(regionMap) {
+    if (canSolveWithDepth(regionMap, 0)) return 'easy';
+    if (canSolveWithDepth(regionMap, 2)) return 'medium';
+    return 'hard';
+  }
+
+  function difficultyRank(level) {
+    const order = { easy: 0, medium: 1, hard: 2 };
+    return order[level] ?? 0;
+  }
+
+  function canSolveWithDepth(regionMap, maxGuesses) {
+    const size = regionMap.length;
+    const regions = Array.from({ length: size }, () => []);
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const id = regionMap[r][c];
+        if (id >= 0 && id < size) {
+          regions[id].push({ r, c });
+        }
+      }
+    }
+    const order = Array.from({ length: size }, (_, i) => i).sort((a, b) => regions[a].length - regions[b].length);
+    const usedRows = new Set();
+    const usedCols = new Set();
+
+    function backtrack(index, guessesLeft) {
+      if (index === size) return true;
+      const regionId = order[index];
+      const cells = regions[regionId].filter(cell => !usedRows.has(cell.r) && !usedCols.has(cell.c));
+      if (cells.length === 0) return false;
+      if (cells.length === 1) {
+        const cell = cells[0];
+        usedRows.add(cell.r);
+        usedCols.add(cell.c);
+        const ok = backtrack(index + 1, guessesLeft);
+        usedRows.delete(cell.r);
+        usedCols.delete(cell.c);
+        return ok;
+      }
+      if (guessesLeft === 0) return false;
+      for (const cell of cells) {
+        usedRows.add(cell.r);
+        usedCols.add(cell.c);
+        if (backtrack(index + 1, guessesLeft - 1)) return true;
+        usedRows.delete(cell.r);
+        usedCols.delete(cell.c);
+      }
+      return false;
+    }
+
+    return backtrack(0, maxGuesses);
   }
 
   function generateVariedRegions(difficulty) {
@@ -333,8 +393,27 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 모든 칸이 할당되었는지 확인하고 빈 칸이 있으면 가장 가까운 영역에 할당
     fillRemainingCells(map);
-    
+
+    if (!validateRegionMap(map)) {
+      return null;
+    }
+
     return map;
+  }
+
+  function validateRegionMap(map) {
+    const size = map.length;
+    const counts = Array(size).fill(0);
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        const id = map[r][c];
+        if (id >= 0 && id < size) counts[id]++;
+      }
+    }
+    for (let i = 0; i < size; i++) {
+      if (counts[i] <= 0) return false;
+    }
+    return true;
   }
 
   function generateRandomRegionSizes() {
@@ -534,9 +613,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (difficulty === 'easy') {
       return [6, 6, 8, 8, 9, 9, 8, 10]; // 총 64칸
     } else if (difficulty === 'medium') {
-      return [5, 7, 8, 8, 9, 9, 9, 9]; // 총 64칸
+      return [4, 6, 8, 8, 9, 9, 10, 10]; // 총 64칸
     } else { // hard
-      return [4, 6, 7, 8, 8, 9, 10, 12]; // 총 64칸
+      return [3, 5, 7, 8, 9, 10, 11, 11]; // 총 64칸
     }
   }
 
@@ -748,19 +827,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     return true;
-  }
-
-  function getRegionSize(difficulty, regionId) {
-    if (difficulty === 'easy') {
-      const sizes = [1, 2, 2, 3, 3, 4, 4];
-      return sizes[regionId];
-    } else if (difficulty === 'medium') {
-      const sizes = [2, 2, 3, 3, 4, 5, 6];
-      return sizes[regionId];
-    } else { // hard
-      const sizes = [2, 3, 4, 5, 6, 7, 7];
-      return sizes[regionId];
-    }
   }
 
   function getAvailableNeighbors(r, c, map) {
