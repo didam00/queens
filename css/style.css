@@ -60,6 +60,12 @@ select {
   background-image: none;
 }
 
+[data-r][data-c] {
+  & > span {
+    opacity: 0.8;
+  }
+}
+
 button {
   transition: all 0.3s ease;
 
