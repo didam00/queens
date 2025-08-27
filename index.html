@@ -30,6 +30,9 @@
       <div class="text-gray-800 font-semibold w-20 text-center">
         <span id="solution-count">해의 수: 분석중...</span>
       </div>
+      <div class="text-gray-800 font-semibold w-20 text-center">
+        <span id="difficulty-display">난이도: 랜덤</span>
+      </div>
       <button id="records-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">history</span></button>
       <button id="reset-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">restart_alt</span></button>
       <button id="new-game-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 grow">새 보드</button>
@@ -123,6 +126,17 @@
           </div>
           <p class="text-xs text-gray-500 mt-2">선택한 해의 개수에 맞춰 보드가 생성됩니다.</p>
         </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-3">난이도</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button class="difficulty-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600" data-difficulty="random">랜덤</button>
+            <button class="difficulty-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-difficulty="easy">쉬움</button>
+            <button class="difficulty-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-difficulty="medium">보통</button>
+            <button class="difficulty-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-difficulty="hard">어려움</button>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">난이도에 따라 보드가 달라집니다.</p>
+        </div>
       </div>
       
       <div class="flex justify-end mt-8">
@@ -131,6 +145,7 @@
     </div>
   </div>
 
+  <script src="js/difficultyGenerator.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

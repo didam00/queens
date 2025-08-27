@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const applySettingsBtn = document.getElementById('apply-settings-btn');
   const boardSizeBtns = document.querySelectorAll('.board-size-btn');
   const solutionCountBtns = document.querySelectorAll('.solution-count-btn');
+  const difficultyDisplay = document.getElementById('difficulty-display');
+  const difficultyBtns = document.querySelectorAll('.difficulty-btn');
   
   // 로딩 관련 요소들
   const loadingOverlay = document.getElementById('loading-overlay');
@@ -55,11 +57,22 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingBoardSize = 8; // 적용 대기 중인 보드 크기
   let preferredSolutionCount = 'random'; // 설정된 해의 개수
   let pendingPreferredSolutionCount = 'random';
+  let selectedDifficulty = 'random';
+  let pendingDifficulty = 'random';
 
   const mediumColors = ['bg-purple-300', 'bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-orange-300', 'bg-gray-300', 'bg-pink-300', 'bg-indigo-300', 'bg-teal-300', 'bg-lime-300'];
   const lightBorderColors = ['border-purple-200', 'border-blue-200', 'border-green-200', 'border-yellow-200', 'border-orange-200', 'border-gray-200', 'border-pink-200', 'border-indigo-200', 'border-teal-200', 'border-lime-200'];
   const queenIconName = 'chess_queen';
   const xIconName = 'close';
+
+  function getDifficultyLabel(diff) {
+    switch (diff) {
+      case 'easy': return '쉬움';
+      case 'medium': return '보통';
+      case 'hard': return '어려움';
+      default: return '랜덤';
+    }
+  }
 
   async function initGame() {
     // 버튼들 비활성화
@@ -76,7 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     isGameFinished = false; // 게임 상태 초기화
     updateUndoButton();
     boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
-    
+    difficultyDisplay.textContent = `난이도: ${getDifficultyLabel(selectedDifficulty)}`;
+
     await generateRegions();
     renderBoard();
     
@@ -170,65 +184,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   }
 
-    async function generateRegions() {
+  async function generateRegions() {
     solutionCountElement.textContent = '해의 수: 생성 중...';
     showLoading();
-    
-    let success = false;
-    let generatedMap = null;
-    let attempts = 0;
-    const maxAttempts = 200;
-    
-    try {
-      while (!success && attempts < maxAttempts) {
-        // 진행률 업데이트 (시도 횟수 기반)
-        const progress = (attempts / maxAttempts) * 80; // 80%까지는 시도 과정
-        setLoadingProgress(progress, `영역 패턴 생성 중... (${attempts + 1}/${maxAttempts})`);
-        
-        const result = await tryGenerateRegionsWithSolutionCountAsync();
-        if (result && result.map && result.solution && result.solutionCount >= 1 && result.solutionCount <= 3) {
-          const desired = preferredSolutionCount === 'random' ? null : parseInt(preferredSolutionCount);
-          if (desired === null || result.solutionCount === desired) {
-            generatedMap = result.map;
-            solutionBoard = result.solution;
-            solutionCount = result.solutionCount;
-            success = true;
-          }
-        }
-        attempts++;
-        
-        // UI 업데이트를 위한 짧은 대기
-        await new Promise(resolve => setTimeout(resolve, 1));
-      }
-      
-      setLoadingProgress(85, '해 검증 중...');
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      if (!success) {
-        setLoadingProgress(90, '대안 패턴 생성 중...');
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-        // 대안 방법으로 간단한 고정 패턴 사용
-        const fallbackResult = generateFallbackRegions();
-        regionMap = fallbackResult.map;
-        solutionBoard = fallbackResult.solution;
-        solutionCount = 1;
-      } else {
-        regionMap = generatedMap;
-      }
-      
-      setLoadingProgress(95, '해 수 계산 중...');
-      await new Promise(resolve => setTimeout(resolve, 50));
 
-      setLoadingProgress(100, '완료!');
-      await new Promise(resolve => setTimeout(resolve, 100));
+    const seed = Date.now();
+    const puzzle = QueensGenerator.generatePuzzle({ N: BOARD_SIZE, difficulty: selectedDifficulty, seed });
 
-      // UI 업데이트
-      updateSolutionCountDisplay();
-      
-    } finally {
-      hideLoading();
-    }
+    const map = generateRegionsFromQueens(puzzle.queens, selectedDifficulty);
+    regionMap = map;
+    solutionBoard = generateSolutionBoard(map, puzzle.queens);
+    solutionCount = 1;
+
+    setLoadingProgress(100, '완료!');
+    updateSolutionCountDisplay();
+    hideLoading();
   }
 
   function tryGenerateRegionsWithSolutionCount() {
@@ -266,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSolutionCountDisplay() {
-    solutionCountElement.textContent = `${solutionCount}개의 해`;
+    solutionCountElement.textContent = `해의 수: ${solutionCount}개`;
   }
 
   function solvePuzzleWithSolutionCount(regionMap) {
@@ -501,7 +471,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 모든 칸이 할당되었는지 확인하고 빈 칸이 있으면 가장 가까운 영역에 할당
     fillRemainingCells(map);
-    
+
+    return map;
+  }
+
+  function generateRegionsFromQueens(queenPositions, difficulty) {
+    const map = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(-1));
+    const regionSizes = getRegionSizes(difficulty);
+    queenPositions.forEach((queen, idx) => {
+      const size = regionSizes[idx % regionSizes.length];
+      map[queen.r][queen.c] = idx;
+      growRegionToSize(map, queen.r, queen.c, idx, size);
+    });
+    fillRemainingCells(map);
     return map;
   }
 
@@ -1853,11 +1835,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function updateDifficultyButtons() {
+    difficultyBtns.forEach(btn => {
+      if (btn.dataset.difficulty === pendingDifficulty) {
+        btn.className = 'difficulty-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition';
+      } else {
+        btn.className = 'difficulty-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition';
+      }
+    });
+  }
+
   async function applySettings() {
     settingsModal.classList.add('hidden');
 
     const boardSizeChanged = pendingBoardSize !== BOARD_SIZE;
     const solutionPreferenceChanged = pendingPreferredSolutionCount !== preferredSolutionCount;
+    const difficultyChanged = pendingDifficulty !== selectedDifficulty;
 
     if (boardSizeChanged) {
       BOARD_SIZE = pendingBoardSize;
@@ -1865,10 +1858,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (solutionPreferenceChanged) {
       preferredSolutionCount = pendingPreferredSolutionCount;
     }
+    if (difficultyChanged) {
+      selectedDifficulty = pendingDifficulty;
+    }
 
     localStorage.setItem('queensSolutionPreference', preferredSolutionCount);
+    localStorage.setItem('queensDifficulty', selectedDifficulty);
 
-    if (boardSizeChanged || solutionPreferenceChanged) {
+    if (boardSizeChanged || solutionPreferenceChanged || difficultyChanged) {
       await initGame();
     }
   }
@@ -1879,6 +1876,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedPreference) {
       preferredSolutionCount = savedPreference;
       pendingPreferredSolutionCount = savedPreference;
+    }
+    const savedDifficulty = localStorage.getItem('queensDifficulty');
+    if (savedDifficulty) {
+      selectedDifficulty = savedDifficulty;
+      pendingDifficulty = savedDifficulty;
     }
     // const savedBoardSize = localStorage.getItem('queensBoardSize');
     // if (savedBoardSize) {
@@ -1906,8 +1908,10 @@ document.addEventListener('DOMContentLoaded', () => {
   settingsBtn.addEventListener('click', () => {
     pendingBoardSize = BOARD_SIZE;
     pendingPreferredSolutionCount = preferredSolutionCount;
+    pendingDifficulty = selectedDifficulty;
     updateBoardSizeButtons();
     updateSolutionCountButtons();
+    updateDifficultyButtons();
     settingsModal.classList.remove('hidden');
   });
   closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
@@ -1925,6 +1929,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       pendingPreferredSolutionCount = btn.dataset.count;
       updateSolutionCountButtons();
+    });
+  });
+
+  difficultyBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingDifficulty = btn.dataset.difficulty;
+      updateDifficultyButtons();
     });
   });
 
