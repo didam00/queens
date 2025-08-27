@@ -28,7 +28,7 @@
         <span id="timer">00:00</span>
       </div>
       <div class="text-gray-800 font-semibold w-20 text-center">
-        <span id="current-difficulty">난이도: 분석중...</span>
+        <span id="solution-count">해의 수: 분석중...</span>
       </div>
       <button id="records-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">history</span></button>
       <button id="reset-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">restart_alt</span></button>
@@ -111,6 +111,17 @@
             <button class="board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-size="10">10x10</button>
           </div>
           <p class="text-xs text-gray-500 mt-2">보드 크기를 변경하면 새 게임이 시작됩니다.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-3">해의 개수</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button class="solution-count-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600" data-count="random">랜덤</button>
+            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-count="1">1개</button>
+            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-count="2">2개</button>
+            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-count="3">3개</button>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">선택한 해의 개수에 맞춰 보드가 생성됩니다.</p>
         </div>
       </div>
       
