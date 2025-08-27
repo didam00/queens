@@ -823,7 +823,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE;
   }
 
-  function renderBoard() {
+  function renderBoard(animation = true) {
     boardElement.innerHTML = '';
     boardElement.className = `w-full grid grid-cols-${BOARD_SIZE} bg-white cursor-pointer select-none rounded-lg`;
     
@@ -857,62 +857,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
         cell.appendChild(content);
         boardElement.appendChild(cell);
-        updateCellDOM(r, c);
+        updateCellDOM(r, c, animation);
       }
     }
   }
 
-  function updateCellDOM(r, c) {
+  function updateCellDOM(r, c, animation = true) {
     const cell = boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`);
     if (cell) {
       const content = cell.firstChild;
       content.classList.remove('material-symbols-outlined');
       if (boardState[r][c] === 1) {
         content.textContent = xIconName;
-        content.animate([
-          {
-            fontSize: '0',
-          },
-          {
-            fontSize: '32px',
-          }
-        ], {
-          duration: 100,
-          easing: 'ease-out',
-        });
+        if (animation) {
+          content.animate([
+            {
+              fontSize: '0',
+            },
+            {
+              fontSize: '32px',
+            }
+          ], {
+            duration: 100,
+            easing: 'ease-out',
+          });
+        }
       } else if (boardState[r][c] === 2) {
-        content.animate([
-          {
-            fontSize: '32px',
-          },
-          {
-            fontSize: '0',
-          },
-          {
-            fontSize: '32px',
-          }
-        ], {
-          duration: 200,
-          easing: 'linear',
-        });
-        setTimeout(() => {
+        if (animation) {
+          content.animate([
+            {
+              fontSize: '32px',
+            },
+            {
+              fontSize: '0',
+            },
+            {
+              fontSize: '32px',
+            }
+          ], {
+            duration: 200,
+            easing: 'linear',
+          });
+          setTimeout(() => {
+            content.textContent = queenIconName;
+          }, 150)
+        } else {
           content.textContent = queenIconName;
-        }, 150)
+        }
       } else if (boardState[r][c] === 0) {
-        content.animate([
-          {
-            fontSize: '32px',
-          },
-          {
-            fontSize: '0',
-          },
-        ], {
-          duration: 100,
-          easing: 'linear',
-        });
-        setTimeout(() => {
+        if (animation) {
+          content.animate([
+            {
+              fontSize: '32px',
+            },
+            {
+              fontSize: '0',
+            },
+          ], {
+            duration: 100,
+            easing: 'linear',
+          });
+          setTimeout(() => {
+            content.textContent = '';
+          }, 150)
+        } else {
           content.textContent = '';
-        }, 150)
+        }
       }
       content.classList.add('material-symbols-outlined');
     }
@@ -995,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (history.length > 1) {
       history.pop();
       boardState = JSON.parse(history[history.length - 1]);
-      renderBoard();
+      renderBoard(false);
       validateAndHighlight();
       updateUndoButton();
     }
@@ -1121,10 +1131,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 게임이 끝났을 때 보드 스타일 변경
     boardElement.style.pointerEvents = 'none';
-    boardElement.style.opacity = '0.25';
+    boardElement.style.opacity = '0.5';
 
     hintBtn.disabled = true;
     resetBtn.disabled = true;
+    undoBtn.disabled = true;
     
     return true;
   }
