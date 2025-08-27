@@ -1,5 +1,5 @@
 body {
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: 'Pretendard Variable', sans-serif;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -10,17 +10,36 @@ body {
 
 .error-icon {
   color: #dc2626 !important;
+  animation: pulse-error 0.3s ease-out infinite;
+}
+
+@keyframes pulse-error {
+  0% {
+    scale: 1;
+    filter: brightness(1);
+  }
+  70% {
+    scale: 0.9;
+    filter: brightness(0.9);
+  }
+  100% {
+    scale: 1;
+    filter: brightness(1);
+  }
 }
 
 @keyframes pulse-hint {
   0% {
-    translate: 0 0;
+    scale: 1;
+    filter: brightness(1);
   }
   70% {
-    translate: 0 -4px;
+    scale: 0.9;
+    filter: brightness(0.9);
   }
   100% {
-    translate: 0 0;
+    scale: 1;
+    filter: brightness(1);
   }
 }
 
@@ -42,7 +61,19 @@ select {
 button {
   transition: all 0.3s ease;
 
-  &:active {
-    scale: 0.92;
+  &:active:not(:disabled) {
+    scale: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+#game-board {
+  & > div {
+    
   }
 }

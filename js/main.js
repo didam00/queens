@@ -2,13 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // DOM 요소들
   const boardElement = document.getElementById('game-board');
   const timerElement = document.getElementById('timer');
-  const difficultySelect = document.getElementById('difficulty');
+  const currentDifficultyElement = document.getElementById('current-difficulty');
   const newGameBtn = document.getElementById('new-game-btn');
   const resetBtn = document.getElementById('reset-btn');
   const undoBtn = document.getElementById('undo-btn');
   const hintBtn = document.getElementById('hint-btn');
   const rulesBtn = document.getElementById('rules-btn');
   const recordsBtn = document.getElementById('records-btn');
+  const settingsBtn = document.getElementById('settings-btn');
 
   // 모달 관련 요소들
   const rulesModal = document.getElementById('rules-modal');
@@ -21,8 +22,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeRecordsBtn = document.getElementById('close-records-btn');
   const recordsList = document.getElementById('records-list');
   const fireworksCanvas = document.getElementById('fireworks-canvas');
+  const settingsModal = document.getElementById('settings-modal');
+  const closeSettingsBtn = document.getElementById('close-settings-btn');
+  const applySettingsBtn = document.getElementById('apply-settings-btn');
+  const boardSizeBtns = document.querySelectorAll('.board-size-btn');
+  
+  // 로딩 관련 요소들
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const loadingStatus = document.getElementById('loading-status');
+  const loadingProgress = document.getElementById('loading-progress');
+  const loadingPercentage = document.getElementById('loading-percentage');
 
-  const BOARD_SIZE = 8;
+  let BOARD_SIZE = 8; // 동적으로 변경 가능한 보드 크기
   let boardState = [],
     regionMap = [],
     history = [];
@@ -36,13 +47,23 @@ document.addEventListener('DOMContentLoaded', () => {
   let dragMode = null; // 'add' 또는 'remove' 모드
   let isGameFinished = false; // 게임이 끝났는지 추적
   let solutionBoard = []; // 정답 보드 상태
+  let currentDifficulty = 'medium'; // 현재 난이도
+  let solutionCount = 1; // 현재 보드의 해의 개수
+  let pendingBoardSize = 8; // 적용 대기 중인 보드 크기
 
-  const mediumColors = ['bg-purple-300', 'bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-orange-300', 'bg-gray-300', 'bg-pink-300', 'bg-indigo-300'];
-  const lightBorderColors = ['border-purple-200', 'border-blue-200', 'border-green-200', 'border-yellow-200', 'border-orange-200', 'border-gray-200', 'border-pink-200', 'border-indigo-200'];
+  const darkColors = ['bg-purple-400', 'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-orange-400', 'bg-gray-400', 'bg-pink-400', 'bg-indigo-400', 'bg-teal-400', 'bg-lime-400'];
+  const mediumColors = ['bg-purple-300', 'bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-orange-300', 'bg-gray-300', 'bg-pink-300', 'bg-indigo-300', 'bg-teal-300', 'bg-lime-300'];
+  const lightBorderColors = ['border-purple-200', 'border-blue-200', 'border-green-200', 'border-yellow-200', 'border-orange-200', 'border-gray-200', 'border-pink-200', 'border-indigo-200', 'border-teal-200', 'border-lime-200'];
   const queenIconName = 'chess_queen';
   const xIconName = 'close';
 
-  function initGame() {
+  async function initGame() {
+    // 버튼들 비활성화
+    newGameBtn.disabled = true;
+    resetBtn.disabled = true;
+    hintBtn.disabled = true;
+    settingsBtn.disabled = true;
+    
     clearInterval(timerInterval);
     seconds = 0;
     hintCount = 0;
@@ -51,17 +72,64 @@ document.addEventListener('DOMContentLoaded', () => {
     isGameFinished = false; // 게임 상태 초기화
     updateUndoButton();
     boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
-    generateRegions();
+    
+    await generateRegions();
     renderBoard();
     
     // 보드 스타일 초기화
     boardElement.style.pointerEvents = 'auto';
     boardElement.style.opacity = '1';
     boardElement.style.filter = 'none';
+
+    // 버튼들 다시 활성화
+    newGameBtn.disabled = false;
+    resetBtn.disabled = false;
+    hintBtn.disabled = false;
+    settingsBtn.disabled = false;
+
+    // for (let r = 0; r < BOARD_SIZE; r++) {
+    //   for (let c = 0; c < BOARD_SIZE; c++) {
+    //     const cell = boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`);
+    //     if (cell) {
+    //       cell.style.filter = 'none';
+    //     }
+    //   }
+    // }
+
+    animateWaveFromTopLeft(35, true);
     
     startTimer();
     saveState();
     validateAndHighlight();
+  }
+
+  function animateWaveFromTopLeft(step = 35, clear = false) {
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        const cell = boardElement.querySelector(`[data-r='${r}'][data-c='${c}']`);
+        if (!cell) continue;
+
+        if (clear) {
+          cell.style.visibility = 'hidden';
+        }
+        
+        const delay = (r + c) * step;
+        setTimeout(() => {
+          if (clear) {
+            cell.style.visibility = 'visible';
+          }
+
+          cell.animate(
+            [
+              { translate: '0 0', filter: 'brightness(1.2)' },
+              { translate: '0 -8px', filter: 'brightness(1.1)' },
+              { translate: '0 0', filter: 'none' }
+            ],
+            { duration: 300, easing: 'ease-in-out' }
+          );
+        }, delay);
+      }
+    }
   }
 
   function resetBoard() {
@@ -72,10 +140,21 @@ document.addEventListener('DOMContentLoaded', () => {
     history = [];
     isGameFinished = false; // 게임 상태 초기화
     updateUndoButton();
-    boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
+    // boardState = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        const delay = (r + c) * 35;
+        
+        setTimeout(() => {
+          boardState[r][c] = 0;
+          updateCellDOM(r, c);
+        }, delay);
+      }
+    }
     // regionMap은 그대로 사용
     renderBoard();
-    
+    animateWaveFromTopLeft(35);
+
     // 보드 스타일 초기화
     boardElement.style.pointerEvents = 'auto';
     boardElement.style.opacity = '1';
@@ -84,61 +163,360 @@ document.addEventListener('DOMContentLoaded', () => {
     startTimer();
     saveState();
     validateAndHighlight();
+
   }
 
-  function generateRegions() {
+    async function generateRegions() {
+    currentDifficultyElement.textContent = '난이도: 생성 중...';
+    showLoading();
+    
     let success = false;
     let generatedMap = null;
-    while (!success) {
-      const result = tryGenerateRegions();
-      if (result && result.map && result.solution) {
-        generatedMap = result.map;
-        solutionBoard = result.solution;
-        success = true;
+    let attempts = 0;
+    const maxAttempts = 200;
+    
+    try {
+      while (!success && attempts < maxAttempts) {
+        // 진행률 업데이트 (시도 횟수 기반)
+        const progress = (attempts / maxAttempts) * 80; // 80%까지는 시도 과정
+        setLoadingProgress(progress, `영역 패턴 생성 중... (${attempts + 1}/${maxAttempts})`);
+        
+        const result = await tryGenerateRegionsWithSolutionCountAsync();
+        if (result && result.map && result.solution && result.solutionCount >= 1 && result.solutionCount <= 3) {
+          generatedMap = result.map;
+          solutionBoard = result.solution;
+          solutionCount = result.solutionCount;
+          success = true;
+        }
+        attempts++;
+        
+        // UI 업데이트를 위한 짧은 대기
+        await new Promise(resolve => setTimeout(resolve, 1));
       }
+      
+      setLoadingProgress(85, '해 검증 중...');
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      if (!success) {
+        setLoadingProgress(90, '대안 패턴 생성 중...');
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // 대안 방법으로 간단한 고정 패턴 사용
+        const fallbackResult = generateFallbackRegions();
+        regionMap = fallbackResult.map;
+        solutionBoard = fallbackResult.solution;
+        solutionCount = 1;
+      } else {
+        regionMap = generatedMap;
+      }
+      
+      setLoadingProgress(95, '난이도 계산 중...');
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // 해의 개수에 따라 난이도 설정
+      if (solutionCount === 1) {
+        currentDifficulty = 'hard';
+      } else if (solutionCount === 2) {
+        currentDifficulty = 'medium';
+      } else if (solutionCount === 3) {
+        currentDifficulty = 'easy';
+      }
+      
+      setLoadingProgress(100, '완료!');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // UI 업데이트
+      updateDifficultyDisplay();
+      
+    } finally {
+      hideLoading();
     }
-    regionMap = generatedMap;
   }
 
-  function tryGenerateRegions() {
-    const difficulty = difficultySelect.value;
+  function tryGenerateRegionsWithSolutionCount() {
+    // 1단계: 다양한 크기의 연결된 영역들을 생성
+    const map = generateVariedRegions();
+    if (!map) return null;
     
-    // 1단계: 먼저 8개의 퀸 위치를 정함 (서로 공격할 수 없는 위치)
-    const queenPositions = generateValidQueenPositions();
-    if (!queenPositions) return null;
+    // 2단계: 백트래킹으로 모든 해를 찾기
+    const puzzleResult = solvePuzzleWithSolutionCount(map);
+    if (!puzzleResult || puzzleResult.solutionCount === 0) return null;
     
-    // 2단계: 퀸들을 포함하는 영역들을 만듦
+    return {
+      map: map,
+      solution: puzzleResult.solutions[0], // 첫 번째 해를 정답으로 사용
+      solutionCount: puzzleResult.solutionCount
+    };
+  }
+
+  async function tryGenerateRegionsWithSolutionCountAsync() {
+    // 비동기 버전 - UI 업데이트를 위한 대기 시간 포함
+    const map = generateVariedRegions();
+    if (!map) return null;
+    
+    // 짧은 대기를 통해 UI 업데이트 허용
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    const puzzleResult = solvePuzzleWithSolutionCount(map);
+    if (!puzzleResult || puzzleResult.solutionCount === 0) return null;
+    
+    return {
+      map: map,
+      solution: puzzleResult.solutions[0],
+      solutionCount: puzzleResult.solutionCount
+    };
+  }
+
+  function updateDifficultyDisplay() {
+    const difficultyText = currentDifficulty === 'easy' ? '쉬움' : 
+                          currentDifficulty === 'medium' ? '보통' : '어려움';
+    currentDifficultyElement.textContent = `${difficultyText}`;
+  }
+
+  function solvePuzzleWithSolutionCount(regionMap) {
+    // 백트래킹으로 모든 가능한 해를 찾기 (최대 5개까지)
+    const allSolutions = findAllSolutions(regionMap, 5);
+    
+    if (allSolutions.length === 0) {
+      return null; // 해가 없음
+    }
+    
+    return {
+      solutions: allSolutions,
+      solutionCount: allSolutions.length
+    };
+  }
+
+  function generateVariedRegions() {
     const map = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(-1));
     
-    // 각 퀸을 중심으로 영역 생성 (마지막 영역 제외)
-    for (let regionId = 0; regionId < BOARD_SIZE - 1; regionId++) {
-      const queen = queenPositions[regionId];
-      const targetSize = getRegionSize(difficulty, regionId);
+    // 다양한 패턴으로 시작점들을 동적 생성
+    const patterns = generateDynamicPatterns();
+    const selectedPattern = patterns[Math.floor(Math.random() * patterns.length)];
+    const regionSizes = generateRandomRegionSizes();
+    
+    // 각 영역을 시드에서 시작하여 확장
+    for (let regionId = 0; regionId < BOARD_SIZE; regionId++) {
+      const startPoint = selectedPattern[regionId];
       
-      // 퀸 위치를 해당 영역에 할당
-      map[queen.r][queen.c] = regionId;
+      // 시작점 찾기 (이미 할당된 곳이면 가까운 빈 곳 찾기)
+      const actualStart = findNearestEmptyCell(map, startPoint.r, startPoint.c);
+      if (!actualStart) continue;
       
-      // 영역 크기가 1보다 크면 주변 칸들을 추가로 할당
-      if (targetSize > 1) {
-        const remainingSize = targetSize;
-        expandRegion(map, queen.r, queen.c, regionId, remainingSize);
+      map[actualStart.r][actualStart.c] = regionId;
+      
+      // 지정된 크기만큼 영역 확장
+      const targetSize = regionSizes[regionId];
+      growRegionToSize(map, actualStart.r, actualStart.c, regionId, targetSize);
+    }
+    
+    // 모든 칸이 할당되었는지 확인하고 빈 칸이 있으면 가장 가까운 영역에 할당
+    fillRemainingCells(map);
+    
+    return map;
+  }
+
+  function generateRandomRegionSizes() {
+    // 총 칸 수를 동적으로 계산
+    const totalCells = BOARD_SIZE * BOARD_SIZE;
+    const numRegions = BOARD_SIZE;
+    const sizes = [];
+    let remaining = totalCells;
+    
+    for (let i = 0; i < numRegions - 1; i++) {
+      // 최소 크기는 보드 크기에 따라 조정
+      const minSize = Math.max(3, Math.floor(BOARD_SIZE / 2));
+      const maxSize = Math.min(Math.floor(BOARD_SIZE * 1.5), remaining - (numRegions - 1 - i) * minSize);
+      const size = Math.floor(Math.random() * (maxSize - minSize + 1)) + minSize;
+      sizes.push(size);
+      remaining -= size;
+    }
+    
+    // 마지막 영역에 남은 칸 할당
+    sizes.push(remaining);
+    
+    return sizes;
+  }
+
+  function generateDynamicPatterns() {
+    const patterns = [];
+    
+    // 패턴 1: 코너와 센터
+    const cornerPattern = [];
+    cornerPattern.push({ r: 0, c: 0 }); // 좌상단
+    cornerPattern.push({ r: 0, c: BOARD_SIZE - 1 }); // 우상단
+    cornerPattern.push({ r: BOARD_SIZE - 1, c: 0 }); // 좌하단
+    cornerPattern.push({ r: BOARD_SIZE - 1, c: BOARD_SIZE - 1 }); // 우하단
+    
+    // 센터 근처 위치들 추가
+    const center = Math.floor(BOARD_SIZE / 2);
+    for (let i = 4; i < BOARD_SIZE; i++) {
+      const offset = (i - 4) % 4;
+      const r = center + (offset < 2 ? -1 : 1);
+      const c = center + (offset % 2 === 0 ? -1 : 1);
+      cornerPattern.push({ r: Math.max(0, Math.min(BOARD_SIZE - 1, r)), 
+                          c: Math.max(0, Math.min(BOARD_SIZE - 1, c)) });
+    }
+    patterns.push(cornerPattern);
+    
+    // 패턴 2: 대각선
+    const diagonalPattern = [];
+    for (let i = 0; i < BOARD_SIZE; i++) {
+      const r = Math.floor(i * (BOARD_SIZE - 1) / (BOARD_SIZE - 1));
+      const c = Math.floor(i * (BOARD_SIZE - 1) / (BOARD_SIZE - 1));
+      diagonalPattern.push({ r, c });
+    }
+    patterns.push(diagonalPattern);
+    
+    // 패턴 3: 격자
+    const gridPattern = [];
+    const step = Math.max(1, Math.floor(BOARD_SIZE / 3));
+    for (let i = 0; i < BOARD_SIZE; i++) {
+      const r = (i * step) % BOARD_SIZE;
+      const c = ((i * step) + Math.floor(i / 2)) % BOARD_SIZE;
+      gridPattern.push({ r, c });
+    }
+    patterns.push(gridPattern);
+    
+    // 패턴 4: 랜덤
+    const randomPattern = [];
+    for (let i = 0; i < BOARD_SIZE; i++) {
+      randomPattern.push({ 
+        r: Math.floor(Math.random() * BOARD_SIZE), 
+        c: Math.floor(Math.random() * BOARD_SIZE) 
+      });
+    }
+    patterns.push(randomPattern);
+    
+    return patterns;
+  }
+
+  function findAllSolutions(regionMap, maxSolutions = 10) {
+    const solutions = [];
+    
+    // 각 영역에 퀸을 놓을 수 있는 모든 가능한 조합 시도
+    const regionCells = [];
+    for (let regionId = 0; regionId < BOARD_SIZE; regionId++) {
+      const cells = [];
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (regionMap[r][c] === regionId) {
+            cells.push({ r, c });
+          }
+        }
+      }
+      regionCells.push(cells);
+    }
+    
+    // 백트래킹으로 해 찾기
+    const board = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
+    const queens = [];
+    
+    function backtrack(regionIndex) {
+      if (regionIndex >= BOARD_SIZE) {
+        // 모든 영역에 퀸을 놓았음
+        const solution = board.map(row => [...row]);
+        solutions.push(solution);
+        return solutions.length >= maxSolutions;
+      }
+      
+      const currentRegionCells = regionCells[regionIndex];
+      
+      for (const cell of currentRegionCells) {
+        if (canPlaceQueenAt(board, cell.r, cell.c, queens)) {
+          // 퀸을 놓아봄
+          board[cell.r][cell.c] = 2;
+          queens.push({ r: cell.r, c: cell.c });
+          
+          if (backtrack(regionIndex + 1)) {
+            return true; // 충분한 해를 찾았음
+          }
+          
+          // 백트래킹: 퀸 제거
+          board[cell.r][cell.c] = 0;
+          queens.pop();
+        }
+      }
+      
+      return false;
+    }
+    
+    backtrack(0);
+    return solutions;
+  }
+
+  function generateFallbackRegions() {
+    // 간단한 고정 패턴으로 영역 생성
+    const map = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
+    
+    // 8x8 그리드를 8개 영역으로 나누기
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (r < 4 && c < 4) map[r][c] = 0;
+        else if (r < 4 && c >= 4) map[r][c] = 1;
+        else if (r >= 4 && c < 4) map[r][c] = 2;
+        else map[r][c] = 3;
+        
+        if (r < 2 && c < 2) map[r][c] = 4;
+        else if (r < 2 && c >= 6) map[r][c] = 5;
+        else if (r >= 6 && c < 2) map[r][c] = 6;
+        else if (r >= 6 && c >= 6) map[r][c] = 7;
       }
     }
     
-    // 3단계: 마지막 영역에 남은 모든 칸들을 할당 (연결성 유지)
-    const lastRegionId = BOARD_SIZE - 1;
-    const lastQueen = queenPositions[lastRegionId];
+    // 간단한 해 생성 (각 영역에 퀸 하나씩)
+    const solution = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(0));
+    const queenPositions = [
+      { r: 0, c: 0 }, { r: 0, c: 4 }, { r: 4, c: 0 }, { r: 4, c: 4 },
+      { r: 1, c: 1 }, { r: 1, c: 6 }, { r: 6, c: 1 }, { r: 6, c: 6 }
+    ];
     
-    // 마지막 퀸 위치를 마지막 영역에 할당
-    map[lastQueen.r][lastQueen.c] = lastRegionId;
-    
-    // 남은 모든 빈 칸들을 마지막 영역에 할당 (연결성 유지)
-    fillRemainingCellsToLastRegion(map, lastRegionId);
-    
-    // 4단계: 정답 보드 생성
-    const solution = generateSolutionBoard(map, queenPositions);
+    queenPositions.forEach(queen => {
+      solution[queen.r][queen.c] = 2;
+    });
     
     return { map, solution };
+  }
+
+  function generateConnectedRegions() {
+    const map = Array(BOARD_SIZE).fill(0).map(() => Array(BOARD_SIZE).fill(-1));
+    const regionSizes = [8, 8, 8, 8, 8, 8, 8, 8]; // 기본 크기
+    
+    // 시작점들을 균등하게 분산
+    const startingPoints = [
+      { r: 1, c: 1 }, { r: 1, c: 6 }, { r: 3, c: 0 }, { r: 3, c: 7 },
+      { r: 6, c: 1 }, { r: 6, c: 6 }, { r: 4, c: 3 }, { r: 0, c: 4 }
+    ];
+    
+    // 각 영역을 시드에서 시작하여 확장
+    for (let regionId = 0; regionId < BOARD_SIZE; regionId++) {
+      const startPoint = startingPoints[regionId % startingPoints.length];
+      
+      // 시작점 찾기 (이미 할당된 곳이면 가까운 빈 곳 찾기)
+      const actualStart = findNearestEmptyCell(map, startPoint.r, startPoint.c);
+      if (!actualStart) continue;
+      
+      map[actualStart.r][actualStart.c] = regionId;
+      
+      // 지정된 크기만큼 영역 확장
+      const targetSize = regionSizes[regionId];
+      growRegionToSize(map, actualStart.r, actualStart.c, regionId, targetSize);
+    }
+    
+    // 모든 칸이 할당되었는지 확인하고 빈 칸이 있으면 가장 가까운 영역에 할당
+    fillRemainingCells(map);
+    
+    return map;
+  }
+
+  function getRegionSizes(difficulty) {
+    if (difficulty === 'easy') {
+      return [6, 6, 8, 8, 9, 9, 8, 10]; // 총 64칸
+    } else if (difficulty === 'medium') {
+      return [5, 7, 8, 8, 9, 9, 9, 9]; // 총 64칸
+    } else { // hard
+      return [4, 6, 7, 8, 8, 9, 10, 12]; // 총 64칸
+    }
   }
 
   function generateSolutionBoard(regionMap, queenPositions) {
@@ -195,7 +573,38 @@ document.addEventListener('DOMContentLoaded', () => {
     return solution;
   }
 
-  function expandRegion(map, startR, startC, regionId, targetSize) {
+  function findNearestEmptyCell(map, targetR, targetC) {
+    // BFS로 가장 가까운 빈 칸 찾기
+    const queue = [{ r: targetR, c: targetC, dist: 0 }];
+    const visited = new Set();
+    
+    while (queue.length > 0) {
+      const { r, c, dist } = queue.shift();
+      const key = `${r}-${c}`;
+      
+      if (visited.has(key)) continue;
+      visited.add(key);
+      
+      if (!isValid(r, c)) continue;
+      if (map[r][c] === -1) return { r, c };
+      
+      // 인접 칸들을 큐에 추가
+      const neighbors = [
+        { r: r-1, c: c }, { r: r+1, c: c },
+        { r: r, c: c-1 }, { r: r, c: c+1 }
+      ];
+      
+      for (const neighbor of neighbors) {
+        if (!visited.has(`${neighbor.r}-${neighbor.c}`)) {
+          queue.push({ ...neighbor, dist: dist + 1 });
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  function growRegionToSize(map, startR, startC, regionId, targetSize) {
     const regionCells = [{ r: startR, c: startC }];
     let currentSize = 1;
     
@@ -221,6 +630,52 @@ document.addEventListener('DOMContentLoaded', () => {
       regionCells.push(newCell);
       currentSize++;
     }
+  }
+
+  function fillRemainingCells(map) {
+    // 아직 할당되지 않은 칸들을 가장 가까운 영역에 할당
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (map[r][c] === -1) {
+          // 가장 가까운 할당된 영역을 찾기
+          let nearestRegion = findNearestRegion(map, r, c);
+          if (nearestRegion !== -1) {
+            map[r][c] = nearestRegion;
+          }
+        }
+      }
+    }
+  }
+
+  function findNearestRegion(map, targetR, targetC) {
+    // BFS로 가장 가까운 할당된 영역 찾기
+    const queue = [{ r: targetR, c: targetC, dist: 0 }];
+    const visited = new Set();
+    
+    while (queue.length > 0) {
+      const { r, c, dist } = queue.shift();
+      const key = `${r}-${c}`;
+      
+      if (visited.has(key)) continue;
+      visited.add(key);
+      
+      if (!isValid(r, c)) continue;
+      if (map[r][c] !== -1) return map[r][c];
+      
+      // 인접 칸들을 큐에 추가
+      const neighbors = [
+        { r: r-1, c: c }, { r: r+1, c: c },
+        { r: r, c: c-1 }, { r: r, c: c+1 }
+      ];
+      
+      for (const neighbor of neighbors) {
+        if (!visited.has(`${neighbor.r}-${neighbor.c}`)) {
+          queue.push({ ...neighbor, dist: dist + 1 });
+        }
+      }
+    }
+    
+    return 0; // 기본값으로 첫 번째 영역 반환
   }
 
   function generateValidQueenPositions() {
@@ -370,7 +825,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderBoard() {
     boardElement.innerHTML = '';
-    boardElement.className = 'w-full grid grid-cols-8 bg-white cursor-pointer select-none';
+    boardElement.className = `w-full grid grid-cols-${BOARD_SIZE} bg-white cursor-pointer select-none rounded-lg`;
+    
+    // 동적으로 그리드 컬럼 수 설정
+    boardElement.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, minmax(0, 1fr))`;
+    
     for (let r = 0; r < BOARD_SIZE; r++) {
       for (let c = 0; c < BOARD_SIZE; c++) {
         const cell = document.createElement('div');
@@ -391,7 +850,10 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.dataset.c = c;
 
         const content = document.createElement('span');
-        content.className = 'absolute inset-0 flex items-center justify-center text-black text-3xl md:text-4xl';
+        // 보드 크기에 따라 텍스트 크기 조정
+        const textSize = BOARD_SIZE <= 8 ? 'text-3xl md:text-4xl' : 
+                        BOARD_SIZE <= 10 ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl';
+        content.className = `absolute inset-0 flex items-center justify-center text-black ${textSize}`;
         cell.appendChild(content);
         boardElement.appendChild(cell);
         updateCellDOM(r, c);
@@ -499,7 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateUndoButton() {
-    undoBtn.disabled = history.length <= 1;
+    undoBtn.disabled = history.length <= 1 && !isGameFinished;
   }
 
   function handleInteractionStart(e) {
@@ -618,15 +1080,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 게임이 끝났을 때 보드 스타일 변경
     boardElement.style.pointerEvents = 'none';
-    boardElement.style.opacity = '0.8';
-    boardElement.style.filter = 'grayscale(20%)';
+    boardElement.style.opacity = '0.25';
+
+    hintBtn.disabled = true;
+    resetBtn.disabled = true;
     
     return true;
   }
 
   function saveRecord() {
     const records = JSON.parse(localStorage.getItem('queensRecords')) || [];
-    const newRecord = { date: new Date().toISOString(), time: seconds, hints: hintCount, boardState: boardState, regionMap: regionMap };
+    const newRecord = { 
+      date: new Date().toISOString(), 
+      time: seconds, 
+      hints: hintCount,
+      boardState: boardState, 
+      regionMap: regionMap,
+      difficulty: currentDifficulty,
+      solutionCount: solutionCount,
+      boardSize: BOARD_SIZE
+    };
     records.unshift(newRecord);
     localStorage.setItem('queensRecords', JSON.stringify(records));
   }
@@ -645,21 +1118,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const sec = (record.time % 60).toString().padStart(2, '0');
       const date = new Date(record.date);
       const dateString = `${date.getFullYear()}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getDate().toString().padStart(2, '0')}`;
-      let miniBoardHTML = '<div class="grid grid-cols-8 w-24 h-24 border border-gray-400">';
-      for (let r = 0; r < BOARD_SIZE; r++) {
-        for (let c = 0; c < BOARD_SIZE; c++) {
+      const recordBoardSize = record.boardSize || 8;
+      let miniBoardHTML = `<div class="grid w-24 h-24 border border-gray-400" style="grid-template-columns: repeat(${recordBoardSize}, minmax(0, 1fr));">`;
+      for (let r = 0; r < recordBoardSize; r++) {
+        for (let c = 0; c < recordBoardSize; c++) {
           const regionId = record.regionMap[r][c];
           const colorClass = mediumColors[regionId % mediumColors.length];
           const hasQueen = record.boardState[r][c] === 2;
-          miniBoardHTML += `<div class="${colorClass} relative flex items-center justify-center">${hasQueen ? '<div class="w-1.5 h-1.5 bg-black rounded-full"></div>' : ''}</div>`;
+          const dotSize = recordBoardSize <= 8 ? 'w-1.5 h-1.5' : recordBoardSize <= 10 ? 'w-1 h-1' : 'w-0.5 h-0.5';
+          miniBoardHTML += `<div class="${colorClass} relative flex items-center justify-center">${hasQueen ? `<div class="${dotSize} bg-black rounded-full"></div>` : ''}</div>`;
         }
       }
       miniBoardHTML += '</div>';
+      const difficultyText = record.difficulty === 'easy' ? '쉬움' : 
+                           record.difficulty === 'medium' ? '보통' : 
+                           record.difficulty === 'hard' ? '어려움' : '보통'; // 기본값
+      const solutionCountText = record.solutionCount ? ` (해: ${record.solutionCount}개)` : '';
+      const boardSizeText = record.boardSize ? ` • ${record.boardSize}x${record.boardSize}` : '';
       recordEl.innerHTML = `${miniBoardHTML}
         <div class="flex-grow">
           <p class="font-bold text-lg">${min}:${sec}</p>
           <p class="text-sm text-gray-500">${dateString}</p>
-          <p class="text-xs text-gray-500 mt-1">힌트: ${record.hints || 0}회</p>
+          <p class="text-xs text-gray-500 mt-1">힌트: ${record.hints || 0}회 • ${difficultyText}${solutionCountText}${boardSizeText}</p>
         </div>`;
       recordsList.appendChild(recordEl);
     });
@@ -841,6 +1321,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     return true;
+  }
+
+  function canPlaceQueenHere(r, c) {
+    return solutionBoard[r][c] === 2;
   }
 
   function findBestHint(solution) {
@@ -1229,6 +1713,56 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
   }
 
+  // 로딩 관련 함수들
+  function showLoading() {
+    loadingOverlay.classList.remove('hidden');
+    setLoadingProgress(0, '영역 패턴을 생성하고 있어요');
+  }
+
+  function hideLoading() {
+    loadingOverlay.classList.add('hidden');
+  }
+
+  function setLoadingProgress(percentage, status) {
+    loadingProgress.style.width = `${percentage}%`;
+    loadingPercentage.textContent = `${Math.round(percentage)}%`;
+    loadingStatus.textContent = status;
+  }
+
+  // 설정 관련 함수들
+  function updateBoardSizeButtons() {
+    boardSizeBtns.forEach(btn => {
+      if (parseInt(btn.dataset.size) === pendingBoardSize) {
+        btn.className = 'board-size-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition';
+      } else {
+        btn.className = 'board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition';
+      }
+    });
+  }
+
+  async function applyBoardSizeChange() {
+    settingsModal.classList.add('hidden');
+    
+    if (pendingBoardSize !== BOARD_SIZE) {
+      BOARD_SIZE = pendingBoardSize;
+      
+      // localStorage에 설정 저장
+      // localStorage.setItem('queensBoardSize', BOARD_SIZE.toString());
+      
+      // 새 게임 시작
+      await initGame();
+    }
+  }
+
+  // 설정 로드
+  function loadSettings() {
+    // const savedBoardSize = localStorage.getItem('queensBoardSize');
+    // if (savedBoardSize) {
+    //   BOARD_SIZE = parseInt(savedBoardSize);
+    //   pendingBoardSize = BOARD_SIZE;
+    // }
+  }
+
   // --- 이벤트 리스너 ---
   boardElement.addEventListener('mousedown', handleInteractionStart);
   boardElement.addEventListener('mousemove', handleInteractionMove);
@@ -1239,11 +1773,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   newGameBtn.addEventListener('click', initGame);
   resetBtn.addEventListener('click', resetBoard);
-  difficultySelect.addEventListener('change', initGame);
   undoBtn.addEventListener('click', undo);
   hintBtn.addEventListener('click', showHint);
   rulesBtn.addEventListener('click', () => rulesModal.classList.remove('hidden'));
   closeRulesBtn.addEventListener('click', () => rulesModal.classList.add('hidden'));
+  
+  // 설정 모달 이벤트 리스너
+  settingsBtn.addEventListener('click', () => {
+    pendingBoardSize = BOARD_SIZE;
+    updateBoardSizeButtons();
+    settingsModal.classList.remove('hidden');
+  });
+  closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+  applySettingsBtn.addEventListener('click', applyBoardSizeChange);
+
+  // 보드 크기 버튼 이벤트 리스너
+  boardSizeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingBoardSize = parseInt(btn.dataset.size);
+      updateBoardSizeButtons();
+    });
+  });
 
   playAgainBtn.addEventListener('click', () => {
     winModal.classList.add('hidden');
@@ -1261,5 +1811,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   closeRecordsBtn.addEventListener('click', () => recordsModal.classList.add('hidden'));
 
-  initGame();
+  // 설정 로드 후 게임 초기화
+  loadSettings();
+  initGame().catch(console.error);
 });
