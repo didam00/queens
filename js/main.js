@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSolutionCountDisplay() {
-    solutionCountElement.textContent = `${solutionCount}개의 해`;
+    solutionCountElement.textContent = `${solutionCount}개`;
   }
 
   function getRandomDifficulty() {
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateDifficultyDisplay() {
     const labels = { easy: '쉬움', medium: '보통', hard: '어려움' };
     const label = labels[currentDifficulty] || '랜덤';
-    difficultyDisplay.textContent = `난이도: ${label}`;
+    difficultyDisplay.textContent = `${label}`;
   }
 
   function solvePuzzleWithSolutionCount(regionMap) {
