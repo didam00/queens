@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const applySettingsBtn = document.getElementById('apply-settings-btn');
   const boardSizeBtns = document.querySelectorAll('.board-size-btn');
   const solutionCountBtns = document.querySelectorAll('.solution-count-btn');
+  const themeBtns = document.querySelectorAll('.theme-btn');
   
   // 로딩 관련 요소들
   const loadingOverlay = document.getElementById('loading-overlay');
@@ -55,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingBoardSize = 8; // 적용 대기 중인 보드 크기
   let preferredSolutionCount = 'random'; // 설정된 해의 개수
   let pendingPreferredSolutionCount = 'random';
+  let currentTheme = 'light';
+  let pendingTheme = 'light';
 
   const mediumColors = ['bg-purple-300', 'bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-orange-300', 'bg-gray-300', 'bg-pink-300', 'bg-indigo-300', 'bg-teal-300', 'bg-lime-300'];
   const lightBorderColors = ['border-purple-200', 'border-blue-200', 'border-green-200', 'border-yellow-200', 'border-orange-200', 'border-gray-200', 'border-pink-200', 'border-indigo-200', 'border-teal-200', 'border-lime-200'];
@@ -1166,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const records = JSON.parse(localStorage.getItem('queensRecords')) || [];
     recordsList.innerHTML = '';
     if (records.length === 0) {
-      recordsList.innerHTML = `<p class="text-center text-gray-500">아직 성공한 기록이 없어요.</p>`;
+      recordsList.innerHTML = `<p class="text-center text-gray-500 dark:text-gray-400">아직 성공한 기록이 없어요.</p>`;
       return;
     }
     records.forEach(record => {
@@ -1193,8 +1196,8 @@ document.addEventListener('DOMContentLoaded', () => {
       recordEl.innerHTML = `${miniBoardHTML}
         <div class="flex-grow">
           <p class="font-bold text-lg">${min}:${sec}</p>
-          <p class="text-sm text-gray-500">${dateString}</p>
-          <p class="text-xs text-gray-500 mt-1">힌트: ${record.hints || 0}회${solutionCountText ? ' • ' + solutionCountText : ''}${boardSizeText}</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">${dateString}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">힌트: ${record.hints || 0}회${solutionCountText ? ' • ' + solutionCountText : ''}${boardSizeText}</p>
         </div>`;
       recordsList.appendChild(recordEl);
     });
@@ -1836,9 +1839,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateBoardSizeButtons() {
     boardSizeBtns.forEach(btn => {
       if (parseInt(btn.dataset.size) === pendingBoardSize) {
-        btn.className = 'board-size-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition';
+        btn.className = 'board-size-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition dark:bg-blue-600 dark:hover:bg-blue-700';
       } else {
-        btn.className = 'board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition';
+        btn.className = 'board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
       }
     });
   }
@@ -1846,11 +1849,25 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateSolutionCountButtons() {
     solutionCountBtns.forEach(btn => {
       if (btn.dataset.count === pendingPreferredSolutionCount) {
-        btn.className = 'solution-count-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition';
+        btn.className = 'solution-count-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition dark:bg-blue-600 dark:hover:bg-blue-700';
       } else {
-        btn.className = 'solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition';
+        btn.className = 'solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
       }
     });
+  }
+
+  function updateThemeButtons() {
+    themeBtns.forEach(btn => {
+      if (btn.dataset.theme === pendingTheme) {
+        btn.className = 'theme-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 transition dark:bg-blue-600 dark:hover:bg-blue-700';
+      } else {
+        btn.className = 'theme-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 transition dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
+      }
+    });
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }
 
   async function applySettings() {
@@ -1858,12 +1875,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const boardSizeChanged = pendingBoardSize !== BOARD_SIZE;
     const solutionPreferenceChanged = pendingPreferredSolutionCount !== preferredSolutionCount;
+    const themeChanged = pendingTheme !== currentTheme;
 
     if (boardSizeChanged) {
       BOARD_SIZE = pendingBoardSize;
     }
     if (solutionPreferenceChanged) {
       preferredSolutionCount = pendingPreferredSolutionCount;
+    }
+    if (themeChanged) {
+      currentTheme = pendingTheme;
+      applyTheme(currentTheme);
+      localStorage.setItem('queensTheme', currentTheme);
     }
 
     localStorage.setItem('queensSolutionPreference', preferredSolutionCount);
@@ -1880,6 +1903,14 @@ document.addEventListener('DOMContentLoaded', () => {
       preferredSolutionCount = savedPreference;
       pendingPreferredSolutionCount = savedPreference;
     }
+    const savedTheme = localStorage.getItem('queensTheme');
+    if (savedTheme) {
+      currentTheme = pendingTheme = savedTheme;
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      currentTheme = pendingTheme = 'dark';
+    }
+    applyTheme(currentTheme);
+    updateThemeButtons();
     // const savedBoardSize = localStorage.getItem('queensBoardSize');
     // if (savedBoardSize) {
     //   BOARD_SIZE = parseInt(savedBoardSize);
@@ -1906,8 +1937,10 @@ document.addEventListener('DOMContentLoaded', () => {
   settingsBtn.addEventListener('click', () => {
     pendingBoardSize = BOARD_SIZE;
     pendingPreferredSolutionCount = preferredSolutionCount;
+    pendingTheme = currentTheme;
     updateBoardSizeButtons();
     updateSolutionCountButtons();
+    updateThemeButtons();
     settingsModal.classList.remove('hidden');
   });
   closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
@@ -1925,6 +1958,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       pendingPreferredSolutionCount = btn.dataset.count;
       updateSolutionCountButtons();
+    });
+  });
+
+  themeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingTheme = btn.dataset.theme;
+      updateThemeButtons();
     });
   });
 

@@ -18,7 +18,7 @@
   <link rel="apple-touch-icon" href="/icon.png">
   <link rel="icon" href="/icon.png">
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4">
+<body class="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
 
   <div class="w-full max-w-lg mx-auto">
 
@@ -27,44 +27,44 @@
         <span class="material-symbols-outlined text-xl align-bottom mr-1">timer</span>
         <span id="timer">00:00</span>
       </div>
-      <div class="text-gray-800 font-semibold w-20 text-center">
+      <div class="text-gray-800 dark:text-gray-200 font-semibold w-20 text-center">
         <span id="solution-count">해의 수: 분석중...</span>
       </div>
-      <button id="records-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">history</span></button>
-      <button id="reset-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined">restart_alt</span></button>
-      <button id="new-game-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 grow">새 보드</button>
+      <button id="records-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"><span class="material-symbols-outlined">history</span></button>
+      <button id="reset-btn" class="bg-gray-200 text-gray-800 font-bold p-2 rounded-lg hover:bg-gray-300 flex items-center dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"><span class="material-symbols-outlined">restart_alt</span></button>
+      <button id="new-game-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 grow">새 보드</button>
     </header>
 
     <!-- 로딩 오버레이 -->
-    <div id="loading-overlay" class="hidden absolute inset-0 bg-white bg-opacity-90 flex flex-col items-center justify-center rounded-lg z-50">
+    <div id="loading-overlay" class="hidden absolute inset-0 bg-white bg-opacity-90 flex flex-col items-center justify-center rounded-lg z-50 dark:bg-gray-900 dark:bg-opacity-90 dark:text-gray-100">
       <div class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <h3 class="text-lg font-bold text-gray-800 mb-2">보드 생성 중...</h3>
-        <p id="loading-status" class="text-sm text-gray-600 mb-4">영역 패턴을 생성하고 있어요</p>
-        <div class="w-64 bg-gray-200 rounded-full h-2 mb-2">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">보드 생성 중...</h3>
+        <p id="loading-status" class="text-sm text-gray-600 dark:text-gray-400 mb-4">영역 패턴을 생성하고 있어요</p>
+        <div class="w-64 bg-gray-200 rounded-full h-2 mb-2 dark:bg-gray-700">
           <div id="loading-progress" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
-        <p id="loading-percentage" class="text-xs text-gray-500">0%</p>
+        <p id="loading-percentage" class="text-xs text-gray-500 dark:text-gray-400">0%</p>
       </div>
     </div>
 
-    <main id="game-board" class="w-full grid grid-cols-8 bg-white cursor-pointer select-none rounded-lg relative">
+    <main id="game-board" class="w-full grid grid-cols-8 bg-white cursor-pointer select-none rounded-lg relative dark:bg-gray-800">
       <!-- 자바스크립트로 셀 생성 -->
     </main>
 
     <footer class="flex justify-between mt-4 gap-2">
-      <button id="undo-btn" class="bg-gray-200 text-gray-800 font-bold p-3 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center grow justify-center"><span class="material-symbols-outlined">undo</span></button>
-      <button id="hint-btn" class="bg-yellow-400 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-yellow-500 flex items-center"><span class="material-symbols-outlined mr-1 grow justify-center">lightbulb</span></button>
-      <button id="rules-btn" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined mr-1 grow justify-center">help_outline</span></button>
-      <button id="settings-btn" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 flex items-center"><span class="material-symbols-outlined mr-1 grow justify-center">settings</span></button>
+      <button id="undo-btn" class="bg-gray-200 text-gray-800 font-bold p-3 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center grow justify-center dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"><span class="material-symbols-outlined">undo</span></button>
+      <button id="hint-btn" class="bg-yellow-400 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-yellow-500 flex items-center dark:text-gray-800 dark:hover:bg-yellow-600"><span class="material-symbols-outlined mr-1 grow justify-center">lightbulb</span></button>
+      <button id="rules-btn" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 flex items-center dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"><span class="material-symbols-outlined mr-1 grow justify-center">help_outline</span></button>
+      <button id="settings-btn" class="bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 flex items-center dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"><span class="material-symbols-outlined mr-1 grow justify-center">settings</span></button>
     </footer>
   </div>
 
   <!-- 모달들 -->
   <div id="rules-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-10">
-    <div class="bg-white rounded-lg p-8 max-w-md w-full">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full dark:bg-gray-800 dark:text-gray-100">
       <h2 class="text-2xl font-bold mb-4">게임 규칙</h2>
-      <ol class="list-decimal list-inside space-y-1 text-gray-700">
+      <ol class="list-decimal list-inside space-y-1 text-gray-700 dark:text-gray-300">
         <li>각 <strong>행</strong>과 <strong>열</strong>에는 퀸을 하나만 놓을 수 있습니다.</li>
         <li>같은 <strong>색상 영역</strong> 안에는 퀸을 하나만 놓을 수 있습니다.</li>
         <li>퀸은 서로 <strong>바로 옆 대각선(1칸 거리)</strong>에 위치할 수 없습니다.</li>
@@ -75,58 +75,66 @@
   
   <div id="win-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-20">
     <canvas id="fireworks-canvas" class="absolute inset-0 w-full h-full"></canvas>
-    <div class="bg-white rounded-lg p-8 max-w-md w-full text-center z-10">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full text-center z-10 dark:bg-gray-800 dark:text-gray-100">
       <h2 class="text-4xl font-bold mb-2 text-yellow-500">성공!</h2>
-      <p class="text-lg text-gray-700 mb-4"><strong id="clear-time" class="text-black"></strong>만에 해결했어요!</p>
+      <p class="text-lg text-gray-700 dark:text-gray-300 mb-4"><strong id="clear-time" class="text-black dark:text-white"></strong>만에 해결했어요!</p>
       <div class="flex space-x-4">
-        <button id="view-board-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition">보드 보기</button>
-        <button id="play-again-btn" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">새 게임</button>
+        <button id="view-board-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">보드 보기</button>
+        <button id="play-again-btn" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition">새 게임</button>
       </div>
     </div>
   </div>
 
   <div id="records-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-30">
-    <div class="bg-white rounded-lg p-6 max-w-lg w-full h-[80vh] flex flex-col">
+    <div class="bg-white rounded-lg p-6 max-w-lg w-full h-[80vh] flex flex-col dark:bg-gray-800 dark:text-gray-100">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl font-bold">성공 기록</h2>
-        <button id="close-records-btn" class="p-2 rounded-full hover:bg-gray-200"><span class="material-symbols-outlined">close</span></button>
+        <button id="close-records-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><span class="material-symbols-outlined">close</span></button>
       </div>
       <div id="records-list" class="flex-grow overflow-y-auto space-y-4 pr-2"></div>
     </div>
   </div>
 
   <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-40">
-    <div class="bg-white rounded-lg p-8 max-w-md w-full">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full dark:bg-gray-800 dark:text-gray-100">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold">게임 설정</h2>
-        <button id="close-settings-btn" class="p-2 rounded-full hover:bg-gray-200"><span class="material-symbols-outlined">close</span></button>
+        <button id="close-settings-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><span class="material-symbols-outlined">close</span></button>
       </div>
       
       <div class="space-y-6">
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-3">보드 크기</label>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">보드 크기</label>
           <div class="grid grid-cols-3 gap-2">
-            <button class="board-size-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600" data-size="8">8x8</button>
-            <button class="board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-size="9">9x9</button>
-            <button class="board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-size="10">10x10</button>
+            <button class="board-size-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700" data-size="8">8x8</button>
+            <button class="board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" data-size="9">9x9</button>
+            <button class="board-size-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" data-size="10">10x10</button>
           </div>
-          <p class="text-xs text-gray-500 mt-2">보드 크기를 변경하면 새 게임이 시작됩니다.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">보드 크기를 변경하면 새 게임이 시작됩니다.</p>
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-3">해의 개수</label>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">해의 개수</label>
           <div class="grid grid-cols-4 gap-2">
-            <button class="solution-count-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600" data-count="random">랜덤</button>
-            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-count="1">1개</button>
-            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-count="2">2개</button>
-            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300" data-count="3">3개</button>
+            <button class="solution-count-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700" data-count="random">랜덤</button>
+            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" data-count="1">1개</button>
+            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" data-count="2">2개</button>
+            <button class="solution-count-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" data-count="3">3개</button>
           </div>
-          <p class="text-xs text-gray-500 mt-2">선택한 해의 개수에 맞춰 보드가 생성됩니다.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">선택한 해의 개수에 맞춰 보드가 생성됩니다.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">테마</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="theme-btn bg-blue-500 text-white font-bold py-2 px-3 rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700" data-theme="light">라이트</button>
+            <button class="theme-btn bg-gray-200 text-gray-800 font-bold py-2 px-3 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600" data-theme="dark">다크</button>
+          </div>
         </div>
       </div>
       
       <div class="flex justify-end mt-8">
-        <button id="apply-settings-btn" class="bg-blue-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600">적용</button>
+        <button id="apply-settings-btn" class="bg-blue-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700">적용</button>
       </div>
     </div>
   </div>
