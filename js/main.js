@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const rulesBtn = document.getElementById('rules-btn');
   const recordsBtn = document.getElementById('records-btn');
   const settingsBtn = document.getElementById('settings-btn');
+  const exportBtn = document.getElementById('export-btn');
 
   // 모달 관련 요소들
   const rulesModal = document.getElementById('rules-modal');
@@ -2026,6 +2027,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // }
   }
 
+  function exportBoardState() {
+    const size = BOARD_SIZE;
+    const checks = boardState.map(row =>
+      row.map(cell => cell === 2 ? 'Q' : cell === 1 ? 'X' : 'O')
+    );
+    const colors = regionMap.map(row =>
+      row.map(cell => cell + 1)
+    );
+    const data = { size, checks, colors };
+    const text = [
+      'Queens Puzzle Board State',
+      JSON.stringify(data, null, 2),
+      '',
+      '// Queens 게임 규칙',
+      '// 1. 각 행과 열에는 퀸을 하나만 놓을 수 있습니다.',
+      '// 2. 같은 색상 영역 안에는 퀸을 하나만 놓을 수 있습니다.',
+      '// 3. 퀸은 서로 바로 옆 대각선(1칸 거리)에 위치할 수 없습니다.',
+      '//',
+      '// 위 JSON 데이터에서 "checks"는 사용자가 체크한 위치(Q=퀸, X=표시, O=빈칸)이며,',
+      '// "colors"는 각 영역을 숫자로 표기합니다.'
+    ].join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      alert('현재 보드 상황이 복사되었습니다!');
+    }).catch(err => {
+      console.error('Failed to copy board state:', err);
+    });
+  }
+
   // --- 이벤트 리스너 ---
   boardElement.addEventListener('mousedown', handleInteractionStart);
   boardElement.addEventListener('mousemove', handleInteractionMove);
@@ -2040,7 +2069,9 @@ document.addEventListener('DOMContentLoaded', () => {
   hintBtn.addEventListener('click', showHint);
   rulesBtn.addEventListener('click', () => rulesModal.classList.remove('hidden'));
   closeRulesBtn.addEventListener('click', () => rulesModal.classList.add('hidden'));
-  
+
+  exportBtn.addEventListener('click', exportBoardState);
+
   // 설정 모달 이벤트 리스너
   settingsBtn.addEventListener('click', () => {
     pendingBoardSize = BOARD_SIZE;
