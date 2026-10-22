@@ -1,3 +1,6 @@
+// 우클릭 방지
+document.oncontextmenu = () => false;
+
 document.addEventListener('DOMContentLoaded', () => {
   // DOM 요소들
   const boardElement = document.getElementById('game-board');
